@@ -1,0 +1,593 @@
+﻿<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<head>
+	<title>可视化平台二维界面框架</title>
+	<!-- 杨国强，Created at 2016-08-16. -->
+	<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+	<link rel="stylesheet" href="lib/jquery-ui/jquery-ui.css">
+	<link rel="stylesheet" href="lib/ionicons/css/ionicons.css">
+
+	<script>
+		window.$ = window.jQuery = require('./lib/jquery-2.2.3.min.js');
+		window.echarts = require('./lib/echarts/echarts.js');
+	</script>
+	<script src="lib/echarts/myChartTheme.js"></script>
+	<script src="lib/jquery-ui/jquery-ui.js"></script>
+	<script src="lib/pixi.js"></script>
+	<script src="lib/earcut.js"></script>
+	<script src="lib/polymaps-pixi.js"></script>
+	<script src="lib/openlayer/ol-debug.js"></script>
+
+	<script src="js/commonUtils.js"></script>
+	<script src="js/heatmapLayer.js"></script>
+	<script src="js/windLayer.js"></script>
+	<script src="js/scatterLayer.js"></script>
+	<script src="js/geojsonLayer.js"></script>
+	<script src="js/polluteLayer.js"></script>
+	<script src="js/circleLayer.js"></script>
+	<script src="js/flagLayer.js"></script>
+	<script src="js/personInfectLayer.js"></script>
+	<script src="js/buildingLayer.js"></script>
+	<script src="js/polluteAnimLayer.js"></script>
+
+	<style>
+		body {
+			margin:0px;
+			font-family:宋体;
+			-webkit-user-select:none;
+		}
+		div {
+			cursor: default;
+		}
+		.full {
+			position:absolute;
+			width:100%;
+			height:100%;
+			left:0px;
+			top:0px;
+			overflow:hidden;
+		}
+		.map {
+			width:100%;
+			height:100%;
+		}
+		.topbtn {
+			border-radius: 3px;
+			border: 1px solid #0ab5f7;
+			font-size: 14px;
+			text-shadow: 0 1px 1px rgba(0,0,0,.6);
+			box-shadow: 0 0 15px #0089ff;
+			background-color: rgba(0, 121, 208, 0.47);
+			color: white;
+			padding: 3px 10px;
+			width: auto;
+			display: inline-block;
+			cursor: pointer;
+			-webkit-user-select:none;
+		}
+		.topbtn:hover {
+			background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff));
+		}
+		.topbtn:active {
+			background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff));
+		}
+		.toolbtn {
+			border-radius: 3px;
+			border: 0px solid #0ab5f7;
+			font-size: 14px;
+			text-shadow: 0 1px 1px rgba(0,0,0,.6);
+			background-color: rgb(3, 126, 199);
+			color: white;
+			padding: 3px 6px;
+			width: auto;
+			display: inline-block;
+			cursor: pointer;
+			-webkit-user-select:none;
+		}
+		.toolbtn:hover {
+			background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff));
+		}
+		.toolbtn:active {
+			background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff));
+		}
+		.glyphicon.inactive {
+			color: #ccc;
+		}
+		.layer-item {
+			margin: 2px;
+			padding: 1px;
+			border: 1px solid #0163a9;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+		.layer-item:hover {
+			border: 1px solid #0396ff;
+			background: -webkit-gradient(linear, left top, left bottom, from(rgba(114, 190, 255, 0.61)), to(rgba(0, 52, 97, 0)));
+		}
+		.layer-item.layer-item-selected {
+			border: 1px solid #33c6ff;
+			background-color: rgba(114, 190, 255, 0.3);
+		}
+		.layer-item-caption {
+			color: white;
+			text-shadow: 0 1px 1px rgba(0,0,0,.6);
+			font-size: 14px;
+			padding-left: 5px;
+			display: inline-block;
+			vertical-align: middle;
+			padding: 2px;
+			width: 100px;
+			white-space: normal;
+		}
+		.layer-item-info {
+			color: white;
+			text-shadow: 0 1px 1px rgba(0,0,0,.6);
+			font-size: 14px;
+			padding-left: 5px;
+			display: inline-block;
+			vertical-align: middle;
+			padding: 8px;
+			width: 60px;
+			white-space: normal;
+		}
+		.layer-item-info-name {
+			font-size: 15px;
+		}
+		.layer-item-img {
+			vertical-align:middle;
+			margin: 0px 2px;
+			width: 100px;
+			height: 80px;
+			background-color: black;
+		}
+		.layer-item-chart {
+			display: inline-block;
+			vertical-align:middle;
+			margin: 0px 2px;
+			width: 100px;
+			height: 80px;
+			background-color: black;
+		}
+		.overlay-container {
+			background-image: url(img/mask.png);
+			background-size: 100% 100%;
+		}
+		.noinput { pointer-events: none; }
+
+	</style>
+</head>
+<body style="height:100%;width:100%;overflow:hidden">
+
+<div id="map" class="full" style="z-index:0"></div>
+<canvas id="layerMainCanvas" width="600" height="500" class="full noinput" style="z-index:1"></canvas>
+<canvas id="layerWindCanvas" width="600" height="500" class="full noinput" style="z-index:1"></canvas>
+
+<div id='relatedInfoWin' style="display:none;height:100%;overflow:hidden">
+	<div id="relatedInfoContainer" style="height:100%;overflow:auto">
+	</div>
+</div>
+
+<canvas id="layerPreviewCanvas" width=100px height=80px style="position:fixed;top:-1000px;left:-1000px;display:block;background-color: rgba(0,0,0,0.6);"></canvas>
+
+</body>
+
+<script>
+
+//	if (thisThing) {
+//		debugger;
+//	}
+	var PlanParamProperty = GlobalVar.PlanParamProperty;
+	var personStateToStr = GlobalVar.personStateToStr;
+
+	var layerList = [];
+	var planParam;			// 策略参数
+	var viewerIndex = 0; // 第几个二维视图，只有第一个负责绘制缩略图
+	var settingMapParam = false;
+	var personChartNew = [], personChartChange = [], personChartSum = []; // 新增人口和减少人口和累计人口图表
+
+	var map;
+	var mapLayer;
+	var relatedInfoWin;
+	var mainCanvas = document.getElementById('layerMainCanvas');
+	var mainCtx = mainCanvas.getContext("webgl");
+	var windCanvas = document.getElementById('layerWindCanvas');
+
+	// 重绘图层
+	function tick() {
+		redrawLayers();
+		requestAnimationFrame(tick);
+	}
+	requestAnimationFrame(tick);
+
+	function onTick(t) {
+		t = Date.parse(t);
+		for (var i in layerList)
+			if (layerList[i].onTick)
+				layerList[i].onTick(t);
+	}
+
+	var ipcRenderer = require('electron').ipcRenderer;
+	ipcRenderer.on('tick', function(sender, t) {
+		onTick(t);
+	});
+	ipcRenderer.on('syncMapParam', function(sender, t) {
+		// 其他二维视图地图视角发生变化时与之保持同步
+		settingMapParam = true;
+		map.center(t.center).zoom(t.zoom);
+		settingMapParam = false;
+	});
+	ipcRenderer.on('syncPersonStateVisible', function(sender, t) {
+		// 其他二维视图人口图层可见性发生变化时与之保持同步
+		personInfectLayer.personVisibleFlag = t;
+	});
+	ipcRenderer.on('togglePersonWin', function(sender, isVis) {
+		if (relatedInfoWin)
+			if (!isVis)
+				relatedInfoWin.dialog( "close" );
+			else
+				relatedInfoWin.dialog( "open" );
+	});
+	ipcRenderer.on('initLayer', function(sender, p) {
+		layerList = p.layerList;
+		planParam = p.plan;
+		viewerIndex = p.viewerIndex;
+
+		if (relatedInfoWin)
+			if (!p.isPersonWinVisible)
+				relatedInfoWin.dialog( "close" );
+			else
+				relatedInfoWin.dialog( "open" );
+
+		// 创建人口感染图层
+		let fname = './data/person/PersonInfect';
+		for (let i in planParam.params)
+			fname += '_'+planParam.params[i];
+		let personInfectData = JSON.parse(fs.readFileSync(fname+'.json'));
+		personInfectLayer = {
+			type: 'personInfect',
+			name: '',
+			visible:true,
+			opacity:1.00,
+			personVisibleFlag: 31,
+			data: personInfectData,
+		};
+		layerList.push(personInfectLayer);
+
+		if (p.baseLayerVisibleConfig) {
+			let po = org.polymaps;
+			if (p.baseLayerVisibleConfig.mapVisible) {
+//				map.add(po.image().url(po.url("../map/GISGoogleEarth/{Z}/{X}/{Y}.png")));
+			}
+			if (p.baseLayerVisibleConfig.mapRoadVisible) {
+//				map.add(po.image().url(po.url("../map/GISRoadBJ/{Z}/{X}/{Y}.png")));
+			}
+
+			if (p.baseLayerVisibleConfig.personInfectVisible)
+				for (let i=0;i<5;i++) {
+					setPersonVis(i, p.baseLayerVisibleConfig.personInfectVisible[i]);
+				}
+		}
+
+		// 读取数据文件，layerCacheData保存之前读取的数据，从而保证同一个文件只读取一次
+		let layerCacheData = {};
+		function readLayerFile(layerIndex, callback) {
+			if (layerIndex<layerList.length) {
+				if (!layerList[layerIndex].data && layerList[layerIndex].dataFile) {
+					let fname = layerList[layerIndex].dataFile;
+					if (layerCacheData[fname]) {
+						layerList[layerIndex].data = layerCacheData[fname];
+						readLayerFile(layerIndex+1, callback);
+					} else {
+						fs.readFile(layerList[layerIndex].dataFile, function(err, data){
+							if (!err && data)
+								layerList[layerIndex].data = JSON.parse(data);
+							readLayerFile(layerIndex+1, callback);
+						});
+					}
+				} else {
+					readLayerFile(layerIndex+1, callback);
+				}
+			} else {
+				callback();
+			}
+		}
+
+		readLayerFile(0, function(){
+			initLayers();
+			onTick(p.time);
+		});
+	});
+	ipcRenderer.on('layerChanged', function(sender, newLayerList) {
+		// 调整图层顺序、可见性和透明度
+		let newList = [];
+		for (let i=0;i<newLayerList.length;i++) {
+			for (let j in layerList)
+				if (layerList[j].id==newLayerList[i].id) {
+					newList.push(layerList[j]);
+					setLayerVisibility(j, newLayerList[i].visible);
+					layerList[j].opacity = newLayerList[i].opacity;
+				}
+		}
+		for (let i=newLayerList.length;i<layerList.length;i++) { // 人口感染图层
+			newList.push(layerList[i]);
+		}
+		layerList = newList;
+	});
+
+	function setLayerPreviewImg(id, img) {
+		if (viewerIndex==0)
+			ipcRenderer.sendToHost('setPreviewMsg', 'setLayerPreviewImg', id, img);
+	}
+	function setLayerPreviewInfo(id, txt1, txt2) {
+		ipcRenderer.sendToHost('setPreviewMsg', 'setLayerPreviewInfo', id, txt1, txt2);
+	}
+
+	function initPage() {
+		// 人口及物资相关信息窗口
+		relatedInfoWin = $( "#relatedInfoWin" ).dialog({
+			title: '人口状态统计信息',
+			maxHeight: 900,
+			width: 530,
+			position: {my:'right top', at:'right-5 top+5'},
+			show: { effect: "blind", duration: 500 },
+			hide: { effect: "blind", duration: 200 },
+			close: function() {
+				ipcRenderer.sendToHost('closePersonWin');
+			}
+		});
+
+		initMap();
+		initRelatedInfoItems();
+	}
+
+	function resizeMainCanvas() {
+		if (!map) return;
+		var size = map.getSize();//map.size();
+		mainCanvas.setAttribute('width',size.x);
+		mainCanvas.setAttribute('height',size.y);
+		mainCtx.viewport(0, 0, size.x, size.y);
+		windCanvas.setAttribute('width',size.x);
+		windCanvas.setAttribute('height',size.y);
+	}
+
+	function initLayers() {
+		resizeMainCanvas();
+		mainCtx.clearColor(0.0, 0.0, 0.0, 0.0);
+		mainCtx.blendFunc( mainCtx.SRC_ALPHA, mainCtx.ONE_MINUS_SRC_ALPHA );
+		mainCtx.enable(mainCtx.BLEND);
+
+		for (var i in layerList) {
+			if (layerList[i].type=='heatmap')
+				HeatmapLayer(layerList[i]);
+			if (layerList[i].type=='wind')
+				WindLayer(layerList[i]);
+			if (layerList[i].type=='distribution')
+				ScatterLayer(layerList[i]);
+			if (layerList[i].type=='geojson')
+				GeoJSONLayer(layerList[i]);
+			if (layerList[i].type=='pollute')
+				PolluteLayer(layerList[i]);
+			if (layerList[i].type=='polluteAnim')
+				PolluteAnimLayer(layerList[i]);
+			if (layerList[i].type=='flag')
+				FlagLayer(layerList[i]);
+			if (layerList[i].type=='circle')
+				CircleLayer(layerList[i]);
+			if (layerList[i].type=='personInfect')
+				PersonInfectLayer(layerList[i]);
+			if (layerList[i].type=='building')
+				BuildingLayer(layerList[i]);
+
+			setLayerVisibility(i, layerList[i].visible);
+		}
+	}
+
+	function setLayerVisibility(id, visible) {
+		var theLayer = layerList[id];
+		if (theLayer) {
+			theLayer.visible = visible;
+			if (theLayer.type == 'wind')
+				document.getElementById('layerWindCanvas').style.display = (theLayer.visible && theLayer.opacity>=0.01) ? 'block':'none';
+		}
+	}
+
+	function redrawLayers(mapMoving) {
+		mainCtx.clear(mainCtx.COLOR_BUFFER_BIT);
+		for (let i in layerList) {
+			if (layerList[i].visible && layerList[i].opacity>=0.01 && layerList[i].onDraw)
+				layerList[i].onDraw(mapMoving);
+		}
+	}
+
+	function setPersonVis(id, vis) {
+		let layerItem = $('#relatedInfoItem'+id);
+		let btnItem = layerItem.children('.toolbtn').children('i');
+		if (vis) {
+			btnItem.addClass('ion-eye');
+			btnItem.removeClass('ion-eye-disabled inactive');
+			personInfectLayer.personVisibleFlag |= 1<<id;
+		} else {
+			btnItem.addClass('ion-eye-disabled inactive');
+			btnItem.removeClass('ion-eye');
+			personInfectLayer.personVisibleFlag &= (0xffff ^ (1<<id));
+		}
+	}
+	function tooglePersonVis(id) {
+		let isVisible = personInfectLayer.personVisibleFlag & (1<<id);
+		setPersonVis(id, !isVisible);
+		ipcRenderer.sendToHost('setPersonStateVisible', personInfectLayer.personVisibleFlag);
+	}
+
+	// 创建叠加层控制项
+	function initRelatedInfoItems() {
+		var container = $('#relatedInfoContainer');
+		var content = '<div class="layer-item"><div class="layer-item-caption" style="width:100px">人口状态及总数</div><div class="layer-item-caption">人口分布</div>'
+				+'<div class="layer-item-caption">总数</div><div class="layer-item-caption">新增数量</div><div class="layer-item-caption">变为其它状态数量</div>'
+				+'</div>';
+		for (let i=0;i<5;i++){
+			content += '<div id="relatedInfoItem'+i+'" class="layer-item">'
+					+'<div class="toolbtn" title="切换可见" onclick="tooglePersonVis('+i+');"><i class="ion-eye"></i></div>'
+					+'<div class="layer-item-info"><div>'+personStateToStr(i)+'</div><div id="relatedInfoItemNum'+i+'" style="padding-top:5px"></div></div>'
+					+'<img id="personPreviewImage'+i+'" class="layer-item-img noinput"></img>'
+					+'<div class="layer-item-chart"  id="relatedInfoItemChartSum'+i+'"></div>'
+					+'<div class="layer-item-chart"  id="relatedInfoItemChartNew'+i+'"></div>'
+					+'<div class="layer-item-chart"  id="relatedInfoItemChartChange'+i+'"></div>'
+					+'</div>';
+		}
+		container.html(content);
+
+		// 初始化图表
+		var chartOption = {
+			title: {
+				show: false,
+			},
+			color: ['#0098d9'],
+			legend: {
+				show: false,
+			},
+			grid: {
+				top: 5,
+				bottom: 5,
+				right: 5,
+				left: 5,
+			},
+			tooltip: {
+				trigger: 'axis',
+				formatter: function (params) {
+					params = params[0];
+					//var date = new Date(params.value[0]);
+					return params.value[0].toLocaleString() + ' 数量:' + params.value[1];
+				},
+				axisPointer: {
+					animation: false
+				}
+			},
+			xAxis: {
+				type: 'time',
+				splitLine: {
+					show: false
+				},
+				axisLabel: {
+					show: false,
+				}
+			},
+			yAxis: {
+				type: 'value',
+				boundaryGap: [0, '100%'],
+				splitLine: {
+					show: false
+				},
+				axisLabel: {
+					show: false,
+				}
+			},
+			series: [{
+				name: '',
+				type: 'line',
+				showSymbol: false,
+				hoverAnimation: false,
+				areaStyle: {
+					normal: {
+						color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+							offset: 0,
+							color: 'rgba(255, 58, 68, 0.8)'
+						}, {
+							offset: 1,
+							color: 'rgba(255, 58, 68, 0.1)'
+						}])
+					}
+				},
+				data: []
+			}]
+		};
+
+		let newChart;
+		for (let i=0;i<5;i++){
+			chartOption.color[0] = '#f07009';
+			chartOption.series[0].name = ''+personStateToStr(i)+'新增数量';
+			chartOption.series[0].type = 'line';
+			newChart = echarts.init(document.getElementById('relatedInfoItemChartNew'+i), 'shine');
+			newChart.setOption(chartOption);
+			personChartNew.push( newChart );
+			chartOption.color[0] = '#0098d9';
+			chartOption.series[0].name = ''+personStateToStr(i)+'状态变化数量';
+			chartOption.series[0].type = 'line';
+			newChart = echarts.init(document.getElementById('relatedInfoItemChartChange'+i), 'shine');
+			newChart.setOption(chartOption);
+			personChartChange.push( newChart );
+			chartOption.color[0] = '#f21511';
+			chartOption.series[0].name = ''+personStateToStr(i)+'总数';
+			chartOption.series[0].name = 'line';
+			newChart = echarts.init(document.getElementById('relatedInfoItemChartSum'+i), 'shine');
+			newChart.setOption(chartOption);
+			personChartSum.push( newChart );
+		}
+	}
+
+	function initMap() {
+		var po = org.polymaps;
+		var interact = po.interact();
+		var mapContainer = document.getElementById("map");
+//		map = po.map()
+//				.container(mapContainer.appendChild(po.svg("svg")))
+//				.add(interact).center({lon:116.4, lat:40.2}).zoom(9);
+//
+//		// .url(po.url("http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg")));
+
+		//地图初始化
+		var view = new ol.View({
+			center: ol.proj.transform([116.4, 40.2], 'EPSG:4326', 'EPSG:3857'),
+			zoom: 9
+		});
+		var baseLayer = new ol.layer.Tile({source: new ol.source.OSM()});
+		var vector = new ol.layer.Vector({source: new ol.source.Vector()});
+		map = new ol.Map({
+			target: 'map',
+			controls: [],
+			layers: [
+				baseLayer,
+//				vector
+			],
+			view: view
+		});
+
+		map.isDragging = function(){
+			return interact.drag.dragging();
+		}
+
+		map.on('move', function(){
+			if (!settingMapParam) // 防止循环调用陷入死循环
+				ipcRenderer.sendToHost('setMapParam', map.center(), map.zoom());
+		});
+		map.on('resize', function(){
+			resizeMainCanvas();
+		});
+
+		var lastMoveTime = new Date();
+		function mousemove(e){
+			if (interact.drag.dragging())
+				return;
+
+			let pos = {x:e.clientX-mapContainer.offsetLeft,y:e.clientY-mapContainer.offsetTop};
+
+			pos = ol.proj.toLonLat([pos.x,pos.y]);
+			pos = {lon:pos[0],lat:pos[1]};
+//			ol.proj.fromLonLat([pos.lon,pos.lat]);
+//			map.pointLocationLL(pos);
+//			map.getView().setCenter(pos);
+			$("#latlonLabel").html("经度："+pos.lon.toFixed(6)+" 纬度："+pos.lat.toFixed(6));
+			for (var i in layerList)
+				if (layerList[i].onMouseMove)
+					layerList[i].onMouseMove(pos);
+		}
+		mapContainer.addEventListener("mousemove", mousemove, false);
+	}
+
+	window.onload = function(){
+		initPage();
+	};
+
+</script>
+
+</html>

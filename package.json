@@ -1,0 +1,7 @@
+{
+  "name": "数据可视化平台",
+  "version": "0.1.0",
+  "main": "main.js",
+  "devDependencies": {
+  }
+}

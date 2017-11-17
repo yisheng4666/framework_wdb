@@ -1,0 +1,880 @@
+﻿<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<head>
+    <title>可视化平台界面框架</title>
+    <!-- 杨国强，Created at 2016-08-16. -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="stylesheet" href="lib/jquery-ui/jquery-ui.css">
+    <link rel="stylesheet" href="lib/ionicons/css/ionicons.css">
+    <link rel="stylesheet" href="lib/Cesium/Widgets/widgets.css">
+
+    <script>
+        window.$ = window.jQuery = require('./lib/jquery-2.2.3.min.js');
+        window.echarts = require('./lib/echarts/echarts.js');
+    </script>
+    <script src="lib/Cesium/cesium.js" charset="UTF-8"></script>
+    <script src="lib/jquery-ui/jquery-ui.js"></script>
+    <script src="lib/echarts/myChartTheme.js"></script>
+    <script src="js/commonUtils.js"></script>
+
+    <style>
+        body {
+            margin: 0px;
+            font-family: 宋体;
+            -webkit-user-select: none;
+        }
+
+        .full {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0px;
+            top: 0px;
+            overflow: hidden;
+        }
+
+        .map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .topbtn {
+            border-radius: 3px;
+            border: 1px solid #0ab5f7;
+            font-size: 14px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            box-shadow: 0 0 15px #0089ff;
+            background-color: rgba(0, 121, 208, 0.47);
+            color: white;
+            padding: 3px 10px;
+            width: auto;
+            display: inline-block;
+            cursor: pointer;
+            -webkit-user-select: none;
+        }
+
+        .topbtn:hover {
+            background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff));
+        }
+
+        .topbtn:active {
+            background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff));
+        }
+
+        .toolbtn {
+            border-radius: 3px;
+            border: 0px solid #0ab5f7;
+            font-size: 14px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            background-color: rgb(3, 126, 199);
+            color: white;
+            padding: 3px 6px;
+            width: auto;
+            display: inline-block;
+            cursor: pointer;
+            -webkit-user-select: none;
+        }
+
+        .right {
+            float: right;
+        }
+
+        .toolbtn:hover {
+            background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff));
+        }
+
+        .toolbtn:active {
+            background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff));
+        }
+
+        .glyphicon.inactive {
+            color: #ccc;
+        }
+
+        .plan-item {
+            margin: 2px;
+            padding: 3px;
+            border: 1px solid #0163a9;
+        }
+
+        .plan-item:hover {
+            border: 1px solid #0396ff;
+            background: -webkit-gradient(linear, left top, left bottom, from(rgba(114, 190, 255, 0.61)), to(rgba(0, 52, 97, 0)));
+        }
+
+        .plan-item.plan-item-selected {
+            border: 1px solid #33c6ff;
+            background-color: rgba(114, 190, 255, 0.3);
+        }
+
+        .plan-item-title {
+            color: white;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            font-size: 16px;
+            padding: 5px;
+        }
+
+        .layer-item {
+            margin: 2px;
+            padding: 1px;
+            border: 1px solid #0163a9;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .layer-item:hover {
+            border: 1px solid #0396ff;
+            background: -webkit-gradient(linear, left top, left bottom, from(rgba(114, 190, 255, 0.61)), to(rgba(0, 52, 97, 0)));
+        }
+
+        .layer-item.layer-item-selected {
+            border: 1px solid #33c6ff;
+            background-color: rgba(114, 190, 255, 0.3);
+        }
+
+        .layer-item-info {
+            color: white;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            font-size: 14px;
+            margin-left: 10px;
+            display: inline-block;
+            vertical-align: top;
+            padding: 2px;
+        }
+
+        .layer-item-info-name {
+            font-size: 15px;
+        }
+
+        .layer-item-img {
+            vertical-align: middle;
+            margin: 0px 2px;
+            width: 100px;
+            height: 80px;
+            background-color: black;
+        }
+
+        .subviewer2d {
+            padding: 3px;
+            float: left;
+        }
+
+        .noinput {
+            pointer-events: none;
+        }
+
+        .cesium-viewer-animationContainer {
+            z-index: 1000;
+        }
+
+        .cesium-viewer-timelineContainer {
+            z-index: 1000;
+        }
+
+        .cesium-viewer-fullscreenContainer {
+            z-index: 1000;
+        }
+
+    </style>
+
+</head>
+<body style="background-color:black;overflow:hidden">
+<div id="controlContainer" class="full" style="">
+    <div id="viewer2d" class="full" style=""></div>
+    <div id="viewer3d" class="full" style="">
+        <webview class="full" style="" src="./viewer3d.html" nodeintegration disablewebsecurity></webview>
+    </div>
+    <div id="viewerChartPerson" class="full" style=""></div>
+    <div id="viewerChartResource" class="full" style=""></div>
+
+    <div style="position:absolute;z-index:1000">
+        <div class="topbtn" onclick="toggle2D3DView(0)" title="二维视图"><i class="ion-social-buffer-outline"></i></div>
+        <div class="topbtn" onclick="toggle2D3DView(1)" title="三维视图"><i class="ion-android-globe"></i></div>
+        <div class="topbtn" onclick="toggle2D3DView(2)" title="人口状态统计视图"><i class="ion-ios-pie-outline"></i></div>
+        <div class="topbtn" onclick="toggle2D3DView(3)" title="资源消耗统计视图"><i class="ion-stats-bars"></i></div>
+        <div style="display:inline-block">|</div>
+        <div class="topbtn" onclick="togglePlanListWin()" title="编辑策略列表"><i class="ion-compose"></i></div>
+        <div class="topbtn" onclick="toggle2dlayerConfigWin()" title="二维图层显示设置窗口"><i
+                class="ion-ios-browsers-outline"></i></div>
+        <div class="topbtn" onclick="toggle2dlayerControlWin()" title="二维图层控制及信息窗口"><i class="ion-images"></i></div>
+        <div class="topbtn" onclick="toggle2dPersonWin()" title="二维人口状态统计窗口"><i class="ion-android-image"></i></div>
+        <div style="display:inline-block">|</div>
+        <!--div class="topbtn" onclick="toogleWinVisible(1)"  title="受感染人数窗口"><i class="ion-medkit"></i></div-->
+    </div>
+    <div id="loadingOverlay" class="full"
+         style="z-index:5000;display:none;background: 50% no-repeat url(./img/loading.gif);background-color: rgba(0, 0, 0, 0.75);"></div>
+</div>
+
+<div id='planListWin' style="display:none;height:100%;overflow:hidden">
+    <div style="padding:2px;overflow:hidden;height:25px;position:absolute;top:0;left:0;width:95%;font-size:15px;">
+        <div class="toolbtn" title="添加" onclick="newPlan()"><i class="ion-plus-round"></i></div>
+        <div class="toolbtn" title="删除" onclick="removePlan()"><i class="ion-minus-round"></i></div>
+        <div class="toolbtn" title="上移" onclick="movePlanUp()"><i class="ion-arrow-up-a"></i></div>
+        <div class="toolbtn" title="下移" onclick="movePlanDown()"><i class="ion-arrow-down-a"></i></div>
+        <div class="toolbtn right" title="应用" onclick="applyPlanChange()"><i class="ion-checkmark-round"></i><span>&nbsp;应用</span>
+        </div>
+    </div>
+    <div id="planListContainer" style="margin-top:25px;height:100%;overflow:auto">
+    </div>
+</div>
+
+<div id='layerConfig' style="display:none;height:100%;overflow:auto">
+    <div style="padding:2px;overflow:hidden;height:25px;width:95%;position:absolute;top:0;left:0;font-size:15px;">
+        <span>请勾选需要显示的图层</span>
+        <div class="toolbtn right" title="应用" onclick="applyLayerConfigChange()"><i
+                class="ion-checkmark-round"></i><span>&nbsp;应用</span></div>
+    </div>
+    <div id="layerConfigContainer" style="margin-top:25px;overflow:auto">
+    </div>
+</div>
+
+<div id='layerControl' style="display:none;height:100%;overflow:hidden">
+    <div style="padding:2px;overflow:hidden;height:25px;position:absolute;top:0;left:0">
+        <div class="toolbtn" title="上移" onclick="moveLayerUp()"><i class="ion-arrow-up-a"></i></div>
+        <div class="toolbtn" title="下移" onclick="moveLayerDown()"><i class="ion-arrow-down-a"></i></div>
+        <!--div class="toolbtn" title="可见"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></div-->
+        <div title='透明度' id="layerOpacityCtrl" style="display:inline-block;width:130px;margin: 0px 8px;">
+        </div>
+        <div id="latlonLabel" style="height:20px;white-space: nowrap;overflow:hidden"></div>
+    </div>
+    <div id="layerControlContainer" style="margin-top:25px;height:100%;overflow:auto">
+    </div>
+</div>
+</body>
+
+<script>
+    var PlanParamProperty = GlobalVar.PlanParamProperty;
+    var viewerList = [];
+    var viewer2dList = [];
+    var viewerVisibleIndex = 0; // 当前可见视图，0：二维；1：三维；2：人口状态数据图表；3：资源消耗数据图表
+    var viewerChanged = false;
+    var webviewPerson, webviewResource;
+    var is2dPersonWinVisible = false;
+    var was2dLayerControlWinVis = false;
+
+    var planListWin;
+    var selectedPlanIndex = 0;
+    var layerOpacitySlider;
+    var layerControlWin, layerConfigWin;
+
+    var clock = new Cesium.Clock({
+        startTime : Cesium.JulianDate.fromIso8601("2014-04-28T00:00:00"),
+        currentTime : Cesium.JulianDate.fromIso8601("2014-04-28T00:00:00"),
+        stopTime : Cesium.JulianDate.fromIso8601("2014-06-13"),
+        clockRange : Cesium.ClockRange.LOOP_STOP,
+        clockStep : Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER
+    });
+    var clockController = new Cesium.ClockViewModel(clock);
+    var lastTickTime = new Cesium.JulianDate();
+
+    var PlanList = [
+        {
+            params: [7, 0.50],
+        },
+//	{
+//		params: [19, 0.25],
+//	}
+    ];
+    var layerVisibleConfig = {
+        mapVisible: true,
+        personInfectVisible: [1,1,1,1,1],
+    };
+    var enabledLayers = [];
+    var layerList = [
+        {
+            name:'地表温度',
+            type:'heatmap',
+            dataFile:'./data/weather/T2.json',
+            unit:'K',
+            visible:true,
+            enabled: false,
+            group: '天气',
+            opacity:0.30,
+            zIndex:0,
+        },
+        {
+            name:'地表大气压',
+            type:'heatmap',
+            dataFile:'./data/weather/P.json',
+            unit:'Pa',
+            visible:false,
+            enabled: false,
+            group: '天气',
+            opacity:0.30,
+            zIndex:1,
+        },
+        {
+            name:'水汽混合比',
+            type:'heatmap',
+            dataFile:'./data/weather/QVAPOR.json',
+            unit:'kg/kg',
+            visible:false,
+            enabled: true,
+            group: '天气',
+            opacity:0.50,
+            zIndex:2,
+        },
+        {
+            name:'十米高度风速',
+            type:'wind',
+            dataFile:'./data/weather/Wind10.json',
+            unit:'m/s',
+            visible:true,
+            enabled: true,
+            group: '天气',
+            opacity:1.00,
+            zIndex:3,
+        },
+        {
+            name:'人口分布',
+            type:'distribution',
+            dataFile:'./data/person/PersonAll.json',
+            unit:'',
+            visible:true,
+            enabled: false,
+            group: '基础数据',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'污染物累积浓度分布',
+            type:'pollute',
+            dataFile:'./data/pollute/Pollute.json',
+            unit:'pg/m2',
+            visible:true,
+            enabled: false,
+            group: '基础数据',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'污染物动态扩散过程（累计）',
+            type:'polluteAnim',
+            dataFile:'./data/pollute/Pollute.json',
+            unit:'pg/m2',
+            isAccumulate: true,
+            visible:true,
+            enabled: true,
+            group: '基础数据',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'污染物动态扩散过程（瞬时）',
+            type:'polluteAnim',
+            dataFile:'./data/pollute/Pollute.json',
+            unit:'pg/m2',
+            visible:true,
+            enabled: false,
+            group: '基础数据',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'北京市政区边界',
+            type:'geojson',
+            dataFile:'./data/geojson/beijing.geojson',
+            visible:true,
+            enabled: true,
+            group: '基础数据',
+            opacity:1.00,
+            zIndex:6,
+        },
+        {
+            name:'北京市建筑分布',
+            type:'building',
+            dataFile:'./data/geojson/beijingBuilding.geojson',
+            visible:true,
+            enabled: false,
+            group: '基础数据',
+            opacity:1.00,
+            zIndex:6,
+        },
+//	{
+//		name:'监控点分布',
+//		type:'circle',
+//		unit:'pg/m2',
+//		visible:true,
+//		opacity:1.00,
+//		zIndex:4,
+//	},
+        {
+            name:'三级医院分布',
+            type:'flag',
+            flagImage:'./img/hospital.png',
+            dataFile:'./data/places/hospital3.json',
+            visible:true,
+            enabled: false,
+            group: '医疗机构和药店',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'二级医院分布',
+            type:'flag',
+            flagImage:'./img/hospital.png',
+            dataFile:'./data/places/hospital2.json',
+            visible:true,
+            enabled: true,
+            group: '医疗机构和药店',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'直属急救站',
+            type:'flag',
+            flagImage:'./img/house.png',
+            dataFile:'./data/places/zhishujijiuzhan.json',
+            visible:true,
+            enabled: false,
+            group: '医疗机构和药店',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'区县急救站',
+            type:'flag',
+            flagImage:'./img/house.png',
+            dataFile:'./data/places/quxianjijiuzhan.json',
+            visible:true,
+            enabled: false,
+            group: '医疗机构和药店',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'社区卫生服务站',
+            type:'flag',
+            flagImage:'./img/house.png',
+            dataFile:'./data/places/shequweishengfuwuzhan.json',
+            visible:true,
+            enabled: false,
+            group: '医疗机构和药店',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'社区卫生服务中心',
+            type:'flag',
+            flagImage:'./img/house.png',
+            dataFile:'./data/places/shequweishengfuwuzhongxin.json',
+            visible:true,
+            enabled: false,
+            group: '医疗机构和药店',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'药店',
+            type:'flag',
+            flagImage:'./img/house.png',
+            dataFile:'./data/places/medicalshop.json',
+            visible:true,
+            enabled: false,
+            group: '医疗机构和药店',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'地铁站点',
+            type:'flag',
+            flagImage:'./img/house.png',
+            dataFile:'./data/places/ditiezhandian.json',
+            visible:true,
+            enabled: false,
+            group: '交通枢纽',
+            opacity:1.00,
+            zIndex:4,
+        },
+        {
+            name:'省级客运站',
+            type:'flag',
+            flagImage:'./img/house.png',
+            dataFile:'./data/places/shengjikeyunzhan.json',
+            visible:true,
+            enabled: false,
+            group: '交通枢纽',
+            opacity:1.00,
+            zIndex:4,
+        },
+    ];
+
+    for (var i=0;i<layerList.length;i++) {
+        layerList[i].id = i;
+        if (layerList[i].enabled) {
+            layerList[i].zIndex = enabledLayers.length;
+            enabledLayers.push(layerList[i]);
+        }
+    }
+
+    function initPage() {
+        // 创建时间进度控制和时间线
+        function onTimelineScrubfunction(e) {
+            var clock = e.clock;
+            clock.currentTime = e.timeJulian;
+            clock.shouldAnimate = false;
+        }
+
+        var viewerContainer = document.getElementById('controlContainer');
+        var animationContainer = document.createElement('div');
+        animationContainer.className = 'cesium-viewer-animationContainer';
+        viewerContainer.appendChild(animationContainer);
+        animation = new Cesium.Animation(animationContainer, new Cesium.AnimationViewModel(clockController));
+        var timelineContainer = document.createElement('div');
+        timelineContainer.className = 'cesium-viewer-timelineContainer';
+        viewerContainer.appendChild(timelineContainer);
+        timeline = new Cesium.Timeline(timelineContainer, clock);
+        timeline.addEventListener('settime', onTimelineScrubfunction, false);
+        timeline.zoomTo(clock.startTime, clock.stopTime);
+        var fullscreenContainer = document.createElement('div');
+        fullscreenContainer.className = 'cesium-viewer-fullscreenContainer';
+        viewerContainer.appendChild(fullscreenContainer);
+        var fullscreenButton = new Cesium.FullscreenButton(fullscreenContainer);
+
+        // 策略列表窗口
+        planListWin = $("#planListWin").dialog({
+            title: '设置策略列表',
+            maxHeight: 900,
+            width: 360,
+            position: {my: 'center top', at: 'center top+100'},
+            show: {effect: "blind", duration: 500},
+            hide: {effect: "blind", duration: 200},
+        });
+        refreshPlanList();
+
+        // 图层控制窗口
+        layerControlWin = $("#layerControl").dialog({
+            autoOpen: false,
+            title: '二维图层控制及相关信息',
+            maxHeight: 900,
+            width: 360,
+            position: {my: 'left top', at: 'left top+50'},
+            show: {effect: "blind", duration: 500},
+            hide: {effect: "blind", duration: 200},
+        });
+
+        // 图层设置窗口
+        layerConfigWin = $("#layerConfig").dialog({
+            autoOpen: false,
+            title: '二维图层设置',
+            maxHeight: 900,
+            width: 360,
+            position: {my: 'center center', at: 'center center'},
+            show: {effect: "blind", duration: 500},
+            hide: {effect: "blind", duration: 200}
+        });
+
+        viewerList[0] = document.getElementById("viewer2d");
+        viewerList[1] = document.getElementById("viewer3d");
+        viewerList[2] = document.getElementById("viewerChartPerson");
+        viewerList[3] = document.getElementById("viewerChartResource");
+        toggle2D3DView(viewerVisibleIndex);
+
+        layerOpacitySlider = $('#layerOpacityCtrl').slider();
+        layerOpacitySlider.on('slidechange', function (val) {
+            setCurrLayerOpacity(layerOpacitySlider.slider("option", "value"));
+        });
+
+        initLayerControlItems();
+        initLayerConfigItems();
+    }
+
+    function refreshPlanList() {
+        let planStr = '';
+        for (let i in PlanList) {
+            planStr += '<div id="planItem' + i + '" title="策略' + (i) + '" class="plan-item ' + (i == selectedPlanIndex ? 'plan-item-selected' : '') + '" onclick="selectPlan(' + i + ');">'
+                    + '<div class="plan-item-info"><div class="plan-item-info-name"><div class="plan-item-title">策略' + (i) + '</div>';
+            for (let p in PlanParamProperty) {
+                planStr += '&nbsp;<span>' + PlanParamProperty[p].name + '：</span><select id="planParam' + i + '-' + p + '" onchange="planParamChanged(' + i + ',' + p + ')">';
+                for (let o in PlanParamProperty[p].values)
+                    planStr += '<option ' + (PlanParamProperty[p].values[o] == PlanList[i].params[p] ? 'selected' : '') + '>'
+                            + ((PlanParamProperty[p].isPercent ? 100 : 1) * PlanParamProperty[p].values[o]) + '</option>';
+                planStr += '</select>';
+            }
+            planStr += '</div></div></div>';
+        }
+        $('#planListContainer').html(planStr);
+    }
+
+    function togglePlanListWin() {
+        if (planListWin.dialog( "isOpen" )) {
+            planListWin.dialog('close');
+        } else {
+            refreshPlanList();
+            planListWin.dialog('open');
+        }
+    }
+
+    function toggle2dlayerConfigWin() {
+//        console.log("toggle2dlayerConfigWin");
+        if (layerConfigWin.dialog("isOpen"))
+            layerConfigWin.dialog("close");
+        else
+            layerConfigWin.dialog("open");
+    }
+
+    function toggle2dlayerControlWin() {
+        if (layerControlWin.dialog("isOpen"))
+            layerControlWin.dialog("close");
+        else
+            layerControlWin.dialog("open");
+    }
+    function applyPlanChange() {
+        if (viewerVisibleIndex != 1)
+            ToggleLoadingOverlay(1);
+
+        // 策略列表发生改变
+        let viewNew;
+
+        // 创建人口感染状态图表视图
+        webviewPerson = null;
+        viewNew = document.createElement('webview');
+        viewNew.nodeintegration = true;
+        viewNew.disablewebsecurity = true;
+        viewNew.src = "viewerChartPerson.html";
+        viewNew.setAttribute('class', 'full');
+        document.getElementById('viewerChartPerson').innerHTML = '';
+        document.getElementById('viewerChartPerson').appendChild(viewNew);
+        viewNew.addEventListener('dom-ready', function (view) {
+            if (viewerVisibleIndex == 2)
+                ToggleLoadingOverlay(0);
+            webviewPerson = this;
+            webviewPerson.send('initPlan', {planList: PlanList, time: Cesium.JulianDate.toDate(clock.currentTime)});
+            webviewPerson.openDevTools();
+        });
+
+        // 创建资源消耗状态图表视图
+        webviewResource = null;
+        viewNew = document.createElement('webview');
+        viewNew.nodeintegration = true;
+        viewNew.disablewebsecurity = true;
+        viewNew.src = "viewerChartResource.html";
+        viewNew.setAttribute('class', 'full');
+        document.getElementById('viewerChartResource').innerHTML = '';
+        document.getElementById('viewerChartResource').appendChild(viewNew);
+        viewNew.addEventListener('dom-ready', function (view) {
+            if (viewerVisibleIndex == 3)
+                ToggleLoadingOverlay(0);
+            webviewResource = this;
+            setTimeout(function () {
+                //webviewResource.openDevTools();
+                webviewResource.send('initPlan', {
+                    planList: PlanList,
+                    time: Cesium.JulianDate.toDate(clock.currentTime)
+                });
+            }, 500);
+        });
+//	return;
+
+        recreate2dViewers();
+    }
+
+    // 重新创建二维子视图
+    function recreate2dViewers() {
+        let container = document.getElementById("viewer2d");
+        container.innerHTML = '';
+        viewer2dList = [];
+        if (!PlanList.length) {
+            ToggleLoadingOverlay(0);
+            return;
+        }
+
+        for (let p in PlanList) {
+            let v = document.createElement('webview');
+            v.nodeintegration = true;
+            v.disablewebsecurity = true;
+            v.setAttribute('class', 'subviewer2d');
+            v.plan = PlanList[p];
+            v.viewerIndex = viewer2dList.length;
+            v.src = "viewer2d-subview.html";
+            container.appendChild(v);
+            viewer2dList.push(v);
+
+            v.addEventListener('dom-ready', function(view){
+                if (viewerVisibleIndex==0)
+                    ToggleLoadingOverlay(0);
+                this.send('initLayer', {viewerIndex:this.viewerIndex,
+                    layerList: enabledLayers,
+                    baseLayerVisibleConfig: layerVisibleConfig,
+                    plan: this.plan,
+                    time: Cesium.JulianDate.toDate(clock.currentTime),
+                    isPersonWinVisible: is2dPersonWinVisible,
+                });
+                if (this.viewerIndex==0)
+                	this.openDevTools();
+            });
+            v.addEventListener('ipc-message', function(evt){
+                let args = evt.args;
+                let ele;
+                if (evt.channel=='setPreviewMsg') {
+                    // 设置图层预览图和相关信息
+                    if (args[0]=='setLayerPreviewImg') {
+                        ele = document.getElementById('layerPreviewImage'+args[1]);
+                        if (ele)
+                            ele.src = args[2];
+                    } else if (args[0]=='setLayerPreviewInfo') {
+                        if (args[2]) {
+                            ele = document.getElementById('layerMouseInfo'+args[1]);
+                            if (ele)
+                                ele.innerText = args[2];
+                        }
+                        if (args[3]) {
+                            ele = document.getElementById('layerLegend'+args[1]);
+                            if (ele)
+                                ele.innerHTML = args[3];
+                        }
+                    }
+                } else
+                if (evt.channel=='setMapParam') {
+                    // 同步地图缩放和漫游
+                    for (let i=0;i<viewer2dList.length;i++)
+                        if (viewer2dList[i]!=this)
+                            viewer2dList[i].send('syncMapParam', {center:args[0], zoom:args[1]});
+                } else
+                if (evt.channel=='setPersonStateVisible') {
+                    // 同步人口感染状态图层的可见性
+                    for (let i=0;i<viewer2dList.length;i++)
+                        if (viewer2dList[i]!=this)
+                            viewer2dList[i].send('syncPersonStateVisible', args[0]);
+                } else
+                if (evt.channel=='closePersonWin') {
+                    is2dPersonWinVisible = false;
+                    for (let i=0;i<viewer2dList.length;i++)
+                        if (viewer2dList[i]!=this)
+                            viewer2dList[i].send('togglePersonWin', false);
+                }
+            });
+        }
+        adjust2dViewer();
+
+    }
+
+    // 计算二维子视图的大小
+    function adjust2dViewer() {
+        if (viewer2dList.length<=0) return;
+        let count = viewer2dList.length;
+        let row = 1, col = 1;
+        if (count>2) {
+            if (count<=4) {
+                row = 2; col = 2;
+            } else if (count<=6) {
+                row = 2; col = 3;
+            } else {
+                row = 3; col = 3;
+            }
+        } else {
+            row = 1; col = count;
+        }
+        let container = document.getElementById("viewer2d");
+        let w = (container.clientWidth/col-10) | 0, h = (container.clientHeight/row-10) | 0;
+        for (let i=0;i<viewer2dList.length;i++) {
+            viewer2dList[i].style.width = w+'px';
+            viewer2dList[i].style.height = h+'px';
+        }
+    }
+
+
+    function applyLayerConfigChange() {
+        enabledLayers = [];
+        layerVisibleConfig.mapVisible = document.getElementById('layerConfigMapCheck').checked;
+        layerVisibleConfig.mapRoadVisible = document.getElementById('layerConfigMapRoadCheck').checked;
+        for (let i=0;i<5;i++)
+            layerVisibleConfig.personInfectVisible[i] = document.getElementById('layerConfigPersonCheck'+i).checked;
+        for (let i=0;i<layerList.length;i++) {
+            layerList[i].enabled = document.getElementById('layerConfigCheck'+i).checked;
+            if (layerList[i].enabled) {
+                layerList[i].zIndex = enabledLayers.length;
+                enabledLayers.push(layerList[i]);
+            }
+        }
+        initLayerControlItems();
+        applyPlanChange();
+    }
+    // 创建叠加层控制项
+    function initLayerControlItems(){
+        var layerContainer = $('#layerControlContainer');
+        var layerContent = '';
+        for (let i=0;i<enabledLayers.length;i++){
+            layerContent = '<div id="layerItem'+enabledLayers[i].id+'" title="'+enabledLayers[i].name+'" class="layer-item" onclick="selectLayer('+enabledLayers[i].id+');">'
+                    +'<div class="toolbtn" title="切换可见" onclick="toogleLayerVis('+enabledLayers[i].id+');"><i class="ion-eye'+(enabledLayers[i].visible?'':'-disabled')+'"></i></div>'
+                    +'<img id="layerPreviewImage'+enabledLayers[i].id+'" class="layer-item-img noinput"></img>'
+                    +'<div class="layer-item-info"><div class="layer-item-info-name">'+enabledLayers[i].name+'</div>'
+                    +'<div id=layerMouseInfo'+enabledLayers[i].id+' style="height:25px"></div><div id=layerLegend'+enabledLayers[i].id+'></div>'
+                    +'</div></div>' + layerContent;
+        }
+        layerContainer.html(layerContent);
+        selectLayer(selectedLayerIndex);
+        console.log(enabledLayers);
+    }
+    // 创建叠加层设置项
+    function initLayerConfigItems(){
+        var layerContainer = $('#layerConfigContainer');
+        var layerContent = '';
+        layerContent =
+                '<div><input type="checkbox" id="layerConfigMapRoadCheck" '+(layerVisibleConfig.mapRoadVisible?'checked':'')+' /><span>地理信息</span></div>'
+                + '<div><input type="checkbox" id="layerConfigMapCheck" '+(layerVisibleConfig.mapVisible?'checked':'')+' /><span>卫星地图</span></div>'
+                + layerContent;
+        for (let i=0;i<5;i++)
+            layerContent = '<div><input type="checkbox" id="layerConfigPersonCheck'+i+'" '+(layerVisibleConfig.personInfectVisible[i]?'checked':'')+' /><span>'+GlobalVar.personStateToStr(i)+'分布</span></div>' + layerContent;
+        for (let i=0;i<layerList.length;i++){
+            layerContent = '<div><input type="checkbox" id="layerConfigCheck'+i+'" '+(layerList[i].enabled?'checked':'')+' /><span>'+layerList[i].name+'</span></div>' + layerContent;
+        }
+        layerContainer.html(layerContent);
+//        console.log(layerList);
+    }
+    function getLayerByID(id) {
+        for (let i in enabledLayers)
+            if (enabledLayers[i].id==id)
+                return enabledLayers[i];
+    }
+    function getLayerByZIndex(z) {
+        return enabledLayers[z];
+    }
+    var selectedLayerIndex = 0;
+    function selectLayer(id){
+        var theLayer = getLayerByID(id);
+        if (!theLayer) return;
+        $('#layerItem'+selectedLayerIndex).removeClass('layer-item-selected');
+        var layerItem = $('#layerItem'+id);
+        layerItem.addClass('layer-item-selected');
+        selectedLayerIndex = id;
+        if (layerOpacitySlider) {
+            if (layerOpacitySlider.slider("option", "value") != theLayer.opacity * 100)
+                layerOpacitySlider.slider( "value", theLayer.opacity * 100);
+        }
+    }
+    function toggle2D3DView(viewid) {
+        if (viewerList[viewid]) {
+            if (viewerVisibleIndex != viewid)
+                viewerChanged = true;
+            viewerVisibleIndex = viewid;
+            for (let i in viewerList)
+                if (i==viewid)
+                    viewerList[i].style.display = 'block';
+                else
+                    viewerList[i].style.display = 'none';
+            if (viewid == 0) {
+                adjust2dViewer();
+                if (was2dLayerControlWinVis)
+                    layerControlWin.dialog( "open" );
+            } else {
+                was2dLayerControlWinVis = layerControlWin.dialog( "isOpen" );
+                if (was2dLayerControlWinVis)
+                    layerControlWin.dialog( "close" );
+            }
+        }
+    }
+    function ToggleLoadingOverlay(show) {
+        if (!show) {
+            setTimeout(function() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }, 2000);
+        } else
+            document.getElementById('loadingOverlay').style.display = 'block';
+    }
+    window.onload = function () {
+        initPage();
+    };
+</script>
+</html>
