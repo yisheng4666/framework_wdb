@@ -171,10 +171,10 @@ function HeatmapLayer(layer) {
 			  webgl.clearColor(0.0, 0.0, 0.0, 0.8);
 				webgl.clear(webgl.COLOR_BUFFER_BIT);
 			} else {
-			  let center = map.center();
-			  let size = map.size();	
+			  let center = map.getView().getCenter();//map.center();
+			  let size = map.getSize();//map.size();
 			  let mapedlat = Math.log(Math.tan(Math.PI / 4.0 + center.lat * Math.PI / 360.0));
-				let k = Math.pow(2, map.zoom() - 3) * 512.0 / 45.0;
+				let k = Math.pow(2, map.getView().getZoom() - 3) * 512.0 / 45.0;
 			  webgl.uniform3fv(attrMapParam, [center.lon, mapedlat, k]);
 			  webgl.uniform2fv(attrViewPort, [size.x,size.y]);
 			  webgl.uniform1f(attrOpacity, layer.opacity);
