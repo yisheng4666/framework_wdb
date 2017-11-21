@@ -176,8 +176,10 @@ function FlagLayer(layer) {
     	webgl.useProgram(programObject);
 		  
 		  if (!isPreview) {
-			  let center = map.getView().getCenter();//map.center();
-			  let size = map.getSize();//map.size();
+			  let temp = ol.proj.toLonLat(map.getView().getCenter());
+			  let center = {lon:temp[0], lat:temp[1]};//map.center();
+			  temp = map.getSize();
+			  let size = {x:temp[0],y:temp[1]};//map.size();
 			  let mapedlat = Math.log(Math.tan(Math.PI / 4.0 + center.lat * Math.PI / 360.0));
 			  let k = Math.pow(2.0, map.getView().getZoom() - 3.0) * 512.0 / 45.0;
 			  webgl.uniform3fv(attrMapParam, [center.lon, mapedlat, k]);
@@ -215,7 +217,7 @@ function FlagLayer(layer) {
 	layer.onMouseMove = function(pos) {
 		for (let i=0,n=layerData.length;i<n;i++) {
 			// let mapPos = map.locationPointArray(layerData[i]);
-			let mapPos = {x:layerData[i][0],y:layerData[i][1]};//map.locationPointArray(layerData[i]);
+			let mapPos = {x:layerData[i][0],y:layerData[i][1]};
 			if (Math.abs(mapPos.x-pos.x)<9 && Math.abs(mapPos.y-pos.y)<9) {
 				setLayerPreviewInfo(layer.id, ''+layerData[i][2], ''+(layerData[i][3]?layerData[i][3]:''));
 				break;

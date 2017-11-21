@@ -239,10 +239,11 @@ function PersonInfectLayer(layer) {
     return function(stateVisible) {
 		  webgl.useProgram(programObject);
 		  if (!isPreview) {
-			  let center = map.getView().getCenter();//map.center();
-			  let size = map.getSize();//map.size();
+			  let temp = ol.proj.toLonLat(map.getView().getCenter());
+			  let center = {lon:temp[0], lat:temp[1]};//map.center();
+			  temp = map.getSize();
+			  let size = {x:temp[0],y:temp[1]};//map.size();
 			  let mapedlat = Math.log(Math.tan(Math.PI / 4.0 + center.lat * Math.PI / 360.0));
-			  // let k = Math.pow(2.0, map.zoom() - 3.0) * 512.0 / 45.0;
 			  let k = Math.pow(2.0, map.getView().getZoom() - 3.0) * 512.0 / 45.0;
 			  webgl.uniform3fv(attrMapParam, [center.lon, mapedlat, k]);
 			  webgl.uniform2fv(attrViewPort, [size.x,size.y]);
@@ -317,10 +318,12 @@ function PersonInfectLayer(layer) {
     	if (newPersonBuf.length<=0)
     		return;
 		  webgl.useProgram(programObject);
-		  let center = map.center();
-		  let size = map.size();
+		let temp = ol.proj.toLonLat(map.getView().getCenter());
+		let center = {lon:temp[0], lat:temp[1]};//map.center();
+		temp = map.getSize();
+		let size = {x:temp[0],y:temp[1]};//map.size();
 		  let mapedlat = Math.log(Math.tan(Math.PI / 4.0 + center.lat * Math.PI / 360.0));
-		  let k = Math.pow(2.0, map.zoom() - 3.0) * 512.0 / 45.0;
+		  let k = Math.pow(2.0, map.getView().getZoom() - 3.0) * 512.0 / 45.0;
 		  webgl.uniform3fv(attrMapParam, [center.lon, mapedlat, k]);
 		  webgl.uniform2fv(attrViewPort, [size.x,size.y]);
 		  webgl.uniform1f(attrOpacity, layer.opacity);

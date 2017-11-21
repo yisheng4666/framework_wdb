@@ -218,10 +218,12 @@ function BuildingLayer(layer) {
 			  webgl.clearColor(0.0, 0.0, 0.0, 0.8);
 	    	webgl.clear(webgl.COLOR_BUFFER_BIT);
 	    } else {
-			  let center = map.center();
-			  let size = map.size();
+			let temp = ol.proj.toLonLat(map.getView().getCenter());
+			let center = {lon:temp[0], lat:temp[1]};//map.center();
+			temp = map.getSize();
+			let size = {x:temp[0],y:temp[1]};//map.size();
 			  var mapedlat = Math.log(Math.tan(Math.PI / 4.0 + center.lat * Math.PI / 360.0));
-			  var k = Math.pow(2, map.zoom() - 3) * 512.0 / 45.0;
+			  var k = Math.pow(2, map.getView().getZoom() - 3) * 512.0 / 45.0;
 			  webgl.uniform3fv(attrMapParam, [center.lon, mapedlat, k]);
 			  webgl.uniform2fv(attrViewPort, [size.x,size.y]);
 			  webgl.uniform1f(attrOpacity, layer.opacity);
@@ -293,10 +295,12 @@ function BuildingLayer(layer) {
    		if (!fillBuf || !fillIndex) return;
    		 
     	webgl.useProgram(programObject);
-		  let center = map.center();
-		  let size = map.size();
+		let temp = ol.proj.toLonLat(map.getView().getCenter());
+		let center = {lon:temp[0], lat:temp[1]};//map.center();
+		temp = map.getSize();
+		let size = {x:temp[0],y:temp[1]};//map.size();
 		  let mapedlat = Math.log(Math.tan(Math.PI / 4.0 + center.lat * Math.PI / 360.0));
-		  let k = Math.pow(2, map.zoom() - 3) * 512.0 / 45.0;
+		  let k = Math.pow(2, map.getView().getZoom() - 3) * 512.0 / 45.0;
 		  webgl.uniform3fv(attrMapParam, [center.lon, mapedlat, k]);
 		  webgl.uniform2fv(attrViewPort, [size.x,size.y]);
 	

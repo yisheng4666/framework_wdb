@@ -20,30 +20,27 @@
 
     <style>
         body {
-            margin: 0px;
-            font-family: 宋体;
-            -webkit-user-select: none;
+            margin:0px;
+            font-family:宋体;
+            -webkit-user-select:none;
         }
-
         .full {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            left: 0px;
-            top: 0px;
-            overflow: hidden;
+            position:absolute;
+            width:100%;
+            height:100%;
+            left:0px;
+            top:0px;
+            overflow:hidden;
         }
-
         .map {
-            width: 100%;
-            height: 100%;
+            width:100%;
+            height:100%;
         }
-
         .topbtn {
             border-radius: 3px;
             border: 1px solid #0ab5f7;
             font-size: 14px;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            text-shadow: 0 1px 1px rgba(0,0,0,.6);
             box-shadow: 0 0 15px #0089ff;
             background-color: rgba(0, 121, 208, 0.47);
             color: white;
@@ -51,43 +48,36 @@
             width: auto;
             display: inline-block;
             cursor: pointer;
-            -webkit-user-select: none;
+            -webkit-user-select:none;
         }
-
         .topbtn:hover {
             background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff));
         }
-
         .topbtn:active {
             background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff));
         }
-
         .toolbtn {
             border-radius: 3px;
             border: 0px solid #0ab5f7;
             font-size: 14px;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            text-shadow: 0 1px 1px rgba(0,0,0,.6);
             background-color: rgb(3, 126, 199);
             color: white;
             padding: 3px 6px;
             width: auto;
             display: inline-block;
             cursor: pointer;
-            -webkit-user-select: none;
+            -webkit-user-select:none;
         }
-
         .right {
             float: right;
         }
-
         .toolbtn:hover {
             background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff));
         }
-
         .toolbtn:active {
             background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff));
         }
-
         .glyphicon.inactive {
             color: #ccc;
         }
@@ -97,20 +87,17 @@
             padding: 3px;
             border: 1px solid #0163a9;
         }
-
         .plan-item:hover {
             border: 1px solid #0396ff;
             background: -webkit-gradient(linear, left top, left bottom, from(rgba(114, 190, 255, 0.61)), to(rgba(0, 52, 97, 0)));
         }
-
         .plan-item.plan-item-selected {
             border: 1px solid #33c6ff;
             background-color: rgba(114, 190, 255, 0.3);
         }
-
         .plan-item-title {
             color: white;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            text-shadow: 0 1px 1px rgba(0,0,0,.6);
             font-size: 16px;
             padding: 5px;
         }
@@ -122,33 +109,28 @@
             overflow: hidden;
             white-space: nowrap;
         }
-
         .layer-item:hover {
             border: 1px solid #0396ff;
             background: -webkit-gradient(linear, left top, left bottom, from(rgba(114, 190, 255, 0.61)), to(rgba(0, 52, 97, 0)));
         }
-
         .layer-item.layer-item-selected {
             border: 1px solid #33c6ff;
             background-color: rgba(114, 190, 255, 0.3);
         }
-
         .layer-item-info {
             color: white;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+            text-shadow: 0 1px 1px rgba(0,0,0,.6);
             font-size: 14px;
             margin-left: 10px;
             display: inline-block;
             vertical-align: top;
             padding: 2px;
         }
-
         .layer-item-info-name {
             font-size: 15px;
         }
-
         .layer-item-img {
-            vertical-align: middle;
+            vertical-align:middle;
             margin: 0px 2px;
             width: 100px;
             height: 80px;
@@ -159,51 +141,35 @@
             padding: 3px;
             float: left;
         }
-
-        .noinput {
-            pointer-events: none;
-        }
-
-        .cesium-viewer-animationContainer {
-            z-index: 1000;
-        }
-
-        .cesium-viewer-timelineContainer {
-            z-index: 1000;
-        }
-
-        .cesium-viewer-fullscreenContainer {
-            z-index: 1000;
-        }
+        .noinput { pointer-events: none; }
+        .cesium-viewer-animationContainer { z-index: 1000; }
+        .cesium-viewer-timelineContainer { z-index: 1000; }
+        .cesium-viewer-fullscreenContainer { z-index: 1000; }
 
     </style>
-
 </head>
 <body style="background-color:black;overflow:hidden">
+
 <div id="controlContainer" class="full" style="">
-    <div id="viewer2d" class="full" style=""></div>
-    <div id="viewer3d" class="full" style="">
-        <webview class="full" style="" src="./viewer3d.html" nodeintegration disablewebsecurity></webview>
-    </div>
-    <div id="viewerChartPerson" class="full" style=""></div>
-    <div id="viewerChartResource" class="full" style=""></div>
+    <div id="viewer2d" class="full" style="" ></div>
+    <div id="viewer3d" class="full" style="" ><webview class="full" style="" src="./viewer3d.html" nodeintegration disablewebsecurity></webview></div>
+    <div id="viewerChartPerson" class="full" style="" ></div>
+    <div id="viewerChartResource" class="full" style="" ></div>
 
     <div style="position:absolute;z-index:1000">
-        <div class="topbtn" onclick="toggle2D3DView(0)" title="二维视图"><i class="ion-social-buffer-outline"></i></div>
-        <div class="topbtn" onclick="toggle2D3DView(1)" title="三维视图"><i class="ion-android-globe"></i></div>
-        <div class="topbtn" onclick="toggle2D3DView(2)" title="人口状态统计视图"><i class="ion-ios-pie-outline"></i></div>
-        <div class="topbtn" onclick="toggle2D3DView(3)" title="资源消耗统计视图"><i class="ion-stats-bars"></i></div>
+        <div class="topbtn" onclick="toggle2D3DView(0)"  title="二维视图"><i class="ion-social-buffer-outline"></i></div>
+        <div class="topbtn" onclick="toggle2D3DView(1)"  title="三维视图"><i class="ion-android-globe"></i></div>
+        <div class="topbtn" onclick="toggle2D3DView(2)"  title="人口状态统计视图"><i class="ion-ios-pie-outline"></i></div>
+        <div class="topbtn" onclick="toggle2D3DView(3)"  title="资源消耗统计视图"><i class="ion-stats-bars"></i></div>
         <div style="display:inline-block">|</div>
-        <div class="topbtn" onclick="togglePlanListWin()" title="编辑策略列表"><i class="ion-compose"></i></div>
-        <div class="topbtn" onclick="toggle2dlayerConfigWin()" title="二维图层显示设置窗口"><i
-                class="ion-ios-browsers-outline"></i></div>
-        <div class="topbtn" onclick="toggle2dlayerControlWin()" title="二维图层控制及信息窗口"><i class="ion-images"></i></div>
-        <div class="topbtn" onclick="toggle2dPersonWin()" title="二维人口状态统计窗口"><i class="ion-android-image"></i></div>
+        <div class="topbtn" onclick="togglePlanListWin()"  title="编辑策略列表"><i class="ion-compose"></i></div>
+        <div class="topbtn" onclick="toggle2dlayerConfigWin()"  title="二维图层显示设置窗口"><i class="ion-ios-browsers-outline"></i></div>
+        <div class="topbtn" onclick="toggle2dlayerControlWin()"  title="二维图层控制及信息窗口"><i class="ion-images"></i></div>
+        <div class="topbtn" onclick="toggle2dPersonWin()"  title="二维人口状态统计窗口"><i class="ion-android-image"></i></div>
         <div style="display:inline-block">|</div>
         <!--div class="topbtn" onclick="toogleWinVisible(1)"  title="受感染人数窗口"><i class="ion-medkit"></i></div-->
     </div>
-    <div id="loadingOverlay" class="full"
-         style="z-index:5000;display:none;background: 50% no-repeat url(./img/loading.gif);background-color: rgba(0, 0, 0, 0.75);"></div>
+    <div id="loadingOverlay" class="full" style="z-index:5000;display:none;background: 50% no-repeat url(./img/loading.gif);background-color: rgba(0, 0, 0, 0.75);"></div>
 </div>
 
 <div id='planListWin' style="display:none;height:100%;overflow:hidden">
@@ -212,8 +178,7 @@
         <div class="toolbtn" title="删除" onclick="removePlan()"><i class="ion-minus-round"></i></div>
         <div class="toolbtn" title="上移" onclick="movePlanUp()"><i class="ion-arrow-up-a"></i></div>
         <div class="toolbtn" title="下移" onclick="movePlanDown()"><i class="ion-arrow-down-a"></i></div>
-        <div class="toolbtn right" title="应用" onclick="applyPlanChange()"><i class="ion-checkmark-round"></i><span>&nbsp;应用</span>
-        </div>
+        <div class="toolbtn right" title="应用" onclick="applyPlanChange()"><i class="ion-checkmark-round"></i><span>&nbsp;应用</span></div>
     </div>
     <div id="planListContainer" style="margin-top:25px;height:100%;overflow:auto">
     </div>
@@ -222,8 +187,7 @@
 <div id='layerConfig' style="display:none;height:100%;overflow:auto">
     <div style="padding:2px;overflow:hidden;height:25px;width:95%;position:absolute;top:0;left:0;font-size:15px;">
         <span>请勾选需要显示的图层</span>
-        <div class="toolbtn right" title="应用" onclick="applyLayerConfigChange()"><i
-                class="ion-checkmark-round"></i><span>&nbsp;应用</span></div>
+        <div class="toolbtn right" title="应用" onclick="applyLayerConfigChange()"><i class="ion-checkmark-round"></i><span>&nbsp;应用</span></div>
     </div>
     <div id="layerConfigContainer" style="margin-top:25px;overflow:auto">
     </div>
@@ -241,9 +205,13 @@
     <div id="layerControlContainer" style="margin-top:25px;height:100%;overflow:auto">
     </div>
 </div>
+
+<canvas id="layerPreviewCanvas" width=100px height=80px style="position:fixed;top:-1000px;left:-1000px;display:block;background-color: rgba(0,0,0,0.6);"></canvas>
+
 </body>
 
 <script>
+
     var PlanParamProperty = GlobalVar.PlanParamProperty;
     var viewerList = [];
     var viewer2dList = [];
@@ -276,6 +244,7 @@
 //		params: [19, 0.25],
 //	}
     ];
+
     var layerVisibleConfig = {
         mapVisible: true,
         personInfectVisible: [1,1,1,1,1],
@@ -508,6 +477,32 @@
         }
     }
 
+
+    function tick() {
+        requestAnimationFrame(tick);
+        clock.tick();
+
+        // 每10分钟向当前可见的子窗口发送仿真时钟消息
+        if (viewerChanged || clock.currentTime.dayNumber!=lastTickTime.dayNumber || clock.currentTime.secondsOfDay>=lastTickTime.secondsOfDay+600 || clock.currentTime.secondsOfDay<=lastTickTime.secondsOfDay-600) {
+            viewerChanged = false;
+            lastTickTime.dayNumber = clock.currentTime.dayNumber;
+            lastTickTime.secondsOfDay = clock.currentTime.secondsOfDay;
+            let t = Cesium.JulianDate.toDate(clock.currentTime);
+            if (viewerVisibleIndex==0) {
+                for (let i in viewer2dList)
+                    viewer2dList[i].send('tick', t);
+            } else if (viewerVisibleIndex==1) {
+            } else if (viewerVisibleIndex==2) {
+                if (webviewPerson)
+                    webviewPerson.send('tick', t);
+            } else if (viewerVisibleIndex==3) {
+                if (webviewResource)
+                    webviewResource.send('tick', t);
+            }
+        }
+    }
+    requestAnimationFrame(tick);
+
     function initPage() {
         // 创建时间进度控制和时间线
         function onTimelineScrubfunction(e) {
@@ -515,7 +510,6 @@
             clock.currentTime = e.timeJulian;
             clock.shouldAnimate = false;
         }
-
         var viewerContainer = document.getElementById('controlContainer');
         var animationContainer = document.createElement('div');
         animationContainer.className = 'cesium-viewer-animationContainer';
@@ -533,36 +527,36 @@
         var fullscreenButton = new Cesium.FullscreenButton(fullscreenContainer);
 
         // 策略列表窗口
-        planListWin = $("#planListWin").dialog({
+        planListWin = $( "#planListWin" ).dialog({
             title: '设置策略列表',
             maxHeight: 900,
             width: 360,
-            position: {my: 'center top', at: 'center top+100'},
-            show: {effect: "blind", duration: 500},
-            hide: {effect: "blind", duration: 200},
+            position: {my:'center top', at:'center top+100'},
+            show: { effect: "blind", duration: 500 },
+            hide: { effect: "blind", duration: 200 },
         });
         refreshPlanList();
 
         // 图层控制窗口
-        layerControlWin = $("#layerControl").dialog({
+        layerControlWin = $( "#layerControl" ).dialog({
             autoOpen: false,
             title: '二维图层控制及相关信息',
             maxHeight: 900,
             width: 360,
-            position: {my: 'left top', at: 'left top+50'},
-            show: {effect: "blind", duration: 500},
-            hide: {effect: "blind", duration: 200},
+            position: {my:'left top', at:'left top+50'},
+            show: { effect: "blind", duration: 500 },
+            hide: { effect: "blind", duration: 200 },
         });
 
         // 图层设置窗口
-        layerConfigWin = $("#layerConfig").dialog({
+        layerConfigWin = $( "#layerConfig" ).dialog({
             autoOpen: false,
             title: '二维图层设置',
             maxHeight: 900,
             width: 360,
-            position: {my: 'center center', at: 'center center'},
-            show: {effect: "blind", duration: 500},
-            hide: {effect: "blind", duration: 200}
+            position: {my:'center center', at:'center center'},
+            show: { effect: "blind", duration: 500 },
+            hide: { effect: "blind", duration: 200 },
         });
 
         viewerList[0] = document.getElementById("viewer2d");
@@ -572,7 +566,7 @@
         toggle2D3DView(viewerVisibleIndex);
 
         layerOpacitySlider = $('#layerOpacityCtrl').slider();
-        layerOpacitySlider.on('slidechange', function (val) {
+        layerOpacitySlider.on('slidechange', function(val){
             setCurrLayerOpacity(layerOpacitySlider.slider("option", "value"));
         });
 
@@ -580,16 +574,64 @@
         initLayerConfigItems();
     }
 
+    function toggle2dlayerConfigWin() {
+        if (layerConfigWin.dialog( "isOpen" ))
+            layerConfigWin.dialog( "close" );
+        else
+            layerConfigWin.dialog( "open" );
+    }
+    function toggle2dlayerControlWin() {
+        if (layerControlWin.dialog( "isOpen" ))
+            layerControlWin.dialog( "close" );
+        else
+            layerControlWin.dialog( "open" );
+    }
+    function toggle2dPersonWin() {
+        is2dPersonWinVisible = !is2dPersonWinVisible;
+        for (let i=0;i<viewer2dList.length;i++) {
+            viewer2dList[i].send('togglePersonWin', is2dPersonWinVisible);
+        }
+    }
+    function toggle2D3DView(viewid) {
+        if (viewerList[viewid]) {
+            if (viewerVisibleIndex != viewid)
+                viewerChanged = true;
+            viewerVisibleIndex = viewid;
+            for (let i in viewerList)
+                if (i==viewid)
+                    viewerList[i].style.display = 'block';
+                else
+                    viewerList[i].style.display = 'none';
+            if (viewid == 0) {
+                adjust2dViewer();
+                if (was2dLayerControlWinVis)
+                    layerControlWin.dialog( "open" );
+            } else {
+                was2dLayerControlWinVis = layerControlWin.dialog( "isOpen" );
+                if (was2dLayerControlWinVis)
+                    layerControlWin.dialog( "close" );
+            }
+        }
+    }
+    function ToggleLoadingOverlay(show) {
+        if (!show) {
+            setTimeout(function() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }, 2000);
+        } else
+            document.getElementById('loadingOverlay').style.display = 'block';
+    }
+
     function refreshPlanList() {
         let planStr = '';
         for (let i in PlanList) {
-            planStr += '<div id="planItem' + i + '" title="策略' + (i) + '" class="plan-item ' + (i == selectedPlanIndex ? 'plan-item-selected' : '') + '" onclick="selectPlan(' + i + ');">'
-                    + '<div class="plan-item-info"><div class="plan-item-info-name"><div class="plan-item-title">策略' + (i) + '</div>';
+            planStr += '<div id="planItem'+i+'" title="策略'+(i)+'" class="plan-item '+(i==selectedPlanIndex?'plan-item-selected':'')+'" onclick="selectPlan('+i+');">'
+                    +'<div class="plan-item-info"><div class="plan-item-info-name"><div class="plan-item-title">策略'+(i)+'</div>';
             for (let p in PlanParamProperty) {
-                planStr += '&nbsp;<span>' + PlanParamProperty[p].name + '：</span><select id="planParam' + i + '-' + p + '" onchange="planParamChanged(' + i + ',' + p + ')">';
+                planStr += '&nbsp;<span>'+PlanParamProperty[p].name+'：</span><select id="planParam'+i+'-'+p+'" onchange="planParamChanged('+i+','+p+')">';
                 for (let o in PlanParamProperty[p].values)
-                    planStr += '<option ' + (PlanParamProperty[p].values[o] == PlanList[i].params[p] ? 'selected' : '') + '>'
-                            + ((PlanParamProperty[p].isPercent ? 100 : 1) * PlanParamProperty[p].values[o]) + '</option>';
+                    planStr += '<option '+(PlanParamProperty[p].values[o]==PlanList[i].params[p]?'selected':'')+'>'
+                            + ((PlanParamProperty[p].isPercent?100:1)*PlanParamProperty[p].values[o]) +'</option>';
                 planStr += '</select>';
             }
             planStr += '</div></div></div>';
@@ -606,22 +648,50 @@
         }
     }
 
-    function toggle2dlayerConfigWin() {
-//        console.log("toggle2dlayerConfigWin");
-        if (layerConfigWin.dialog("isOpen"))
-            layerConfigWin.dialog("close");
-        else
-            layerConfigWin.dialog("open");
+    function selectPlan(id) {
+        if (!PlanList[id]) return;
+        $('.plan-item').removeClass('plan-item-selected');
+        $('#planItem'+id).addClass('plan-item-selected');
+        selectedPlanIndex = id;
     }
-
-    function toggle2dlayerControlWin() {
-        if (layerControlWin.dialog("isOpen"))
-            layerControlWin.dialog("close");
-        else
-            layerControlWin.dialog("open");
+    function planParamChanged(i, p) {
+        if (!PlanList[i] || !PlanParamProperty[p]) return;
+        PlanList[i].params[p] = parseFloat($('#planParam'+i+'-'+p).val());
+        if (PlanParamProperty[p].isPercent)
+            PlanList[i].params[p] /= 100;
+    }
+    function newPlan() {
+        let newParams = [];
+        for (let p in PlanParamProperty)
+            newParams.push(PlanParamProperty[p].values[0]);
+        PlanList.push({params:newParams});
+        refreshPlanList();
+    }
+    function removePlan() {
+        if (!PlanList[selectedPlanIndex]) return;
+        PlanList.splice(selectedPlanIndex,1);
+        refreshPlanList();
+    }
+    function movePlanDown() {
+        if (!PlanList[selectedPlanIndex]) return;
+        if (!PlanList[selectedPlanIndex+1]) return;
+        let temp = PlanList[selectedPlanIndex+1];
+        PlanList[selectedPlanIndex+1] = PlanList[selectedPlanIndex];
+        PlanList[selectedPlanIndex] = temp;
+        selectedPlanIndex++;
+        refreshPlanList();
+    }
+    function movePlanUp() {
+        if (!PlanList[selectedPlanIndex]) return;
+        if (!PlanList[selectedPlanIndex-1]) return;
+        let temp = PlanList[selectedPlanIndex-1];
+        PlanList[selectedPlanIndex-1] = PlanList[selectedPlanIndex];
+        PlanList[selectedPlanIndex] = temp;
+        selectedPlanIndex--;
+        refreshPlanList();
     }
     function applyPlanChange() {
-        if (viewerVisibleIndex != 1)
+        if (viewerVisibleIndex!=1)
             ToggleLoadingOverlay(1);
 
         // 策略列表发生改变
@@ -636,11 +706,11 @@
         viewNew.setAttribute('class', 'full');
         document.getElementById('viewerChartPerson').innerHTML = '';
         document.getElementById('viewerChartPerson').appendChild(viewNew);
-        viewNew.addEventListener('dom-ready', function (view) {
-            if (viewerVisibleIndex == 2)
+        viewNew.addEventListener('dom-ready', function(view){
+            if (viewerVisibleIndex==2)
                 ToggleLoadingOverlay(0);
             webviewPerson = this;
-            webviewPerson.send('initPlan', {planList: PlanList, time: Cesium.JulianDate.toDate(clock.currentTime)});
+            webviewPerson.send('initPlan', {planList: PlanList, time:Cesium.JulianDate.toDate(clock.currentTime)});
             webviewPerson.openDevTools();
         });
 
@@ -653,21 +723,19 @@
         viewNew.setAttribute('class', 'full');
         document.getElementById('viewerChartResource').innerHTML = '';
         document.getElementById('viewerChartResource').appendChild(viewNew);
-        viewNew.addEventListener('dom-ready', function (view) {
-            if (viewerVisibleIndex == 3)
+        viewNew.addEventListener('dom-ready', function(view){
+            if (viewerVisibleIndex==3)
                 ToggleLoadingOverlay(0);
             webviewResource = this;
-            setTimeout(function () {
+            setTimeout(function(){
                 //webviewResource.openDevTools();
-                webviewResource.send('initPlan', {
-                    planList: PlanList,
-                    time: Cesium.JulianDate.toDate(clock.currentTime)
-                });
+                webviewResource.send('initPlan', {planList: PlanList, time:Cesium.JulianDate.toDate(clock.currentTime)});
             }, 500);
         });
 //	return;
 
         recreate2dViewers();
+
     }
 
     // 重新创建二维子视图
@@ -702,7 +770,7 @@
                     isPersonWinVisible: is2dPersonWinVisible,
                 });
                 if (this.viewerIndex==0)
-                	this.openDevTools();
+                    this.openDevTools();
             });
             v.addEventListener('ipc-message', function(evt){
                 let args = evt.args;
@@ -747,7 +815,6 @@
             });
         }
         adjust2dViewer();
-
     }
 
     // 计算二维子视图的大小
@@ -774,6 +841,21 @@
         }
     }
 
+    // 创建叠加层设置项
+    function initLayerConfigItems(){
+        var layerContainer = $('#layerConfigContainer');
+        var layerContent = '';
+        layerContent =
+                '<div><input type="checkbox" id="layerConfigMapRoadCheck" '+(layerVisibleConfig.mapRoadVisible?'checked':'')+' /><span>地理信息</span></div>'
+                + '<div><input type="checkbox" id="layerConfigMapCheck" '+(layerVisibleConfig.mapVisible?'checked':'')+' /><span>卫星地图</span></div>'
+                + layerContent;
+        for (let i=0;i<5;i++)
+            layerContent = '<div><input type="checkbox" id="layerConfigPersonCheck'+i+'" '+(layerVisibleConfig.personInfectVisible[i]?'checked':'')+' /><span>'+GlobalVar.personStateToStr(i)+'分布</span></div>' + layerContent;
+        for (let i=0;i<layerList.length;i++){
+            layerContent = '<div><input type="checkbox" id="layerConfigCheck'+i+'" '+(layerList[i].enabled?'checked':'')+' /><span>'+layerList[i].name+'</span></div>' + layerContent;
+        }
+        layerContainer.html(layerContent);
+    }
 
     function applyLayerConfigChange() {
         enabledLayers = [];
@@ -791,6 +873,7 @@
         initLayerControlItems();
         applyPlanChange();
     }
+
     // 创建叠加层控制项
     function initLayerControlItems(){
         var layerContainer = $('#layerControlContainer');
@@ -805,24 +888,14 @@
         }
         layerContainer.html(layerContent);
         selectLayer(selectedLayerIndex);
-        console.log(enabledLayers);
     }
-    // 创建叠加层设置项
-    function initLayerConfigItems(){
-        var layerContainer = $('#layerConfigContainer');
-        var layerContent = '';
-        layerContent =
-                '<div><input type="checkbox" id="layerConfigMapRoadCheck" '+(layerVisibleConfig.mapRoadVisible?'checked':'')+' /><span>地理信息</span></div>'
-                + '<div><input type="checkbox" id="layerConfigMapCheck" '+(layerVisibleConfig.mapVisible?'checked':'')+' /><span>卫星地图</span></div>'
-                + layerContent;
-        for (let i=0;i<5;i++)
-            layerContent = '<div><input type="checkbox" id="layerConfigPersonCheck'+i+'" '+(layerVisibleConfig.personInfectVisible[i]?'checked':'')+' /><span>'+GlobalVar.personStateToStr(i)+'分布</span></div>' + layerContent;
-        for (let i=0;i<layerList.length;i++){
-            layerContent = '<div><input type="checkbox" id="layerConfigCheck'+i+'" '+(layerList[i].enabled?'checked':'')+' /><span>'+layerList[i].name+'</span></div>' + layerContent;
+
+    function applyLayerControlChange() {
+        for (let i=0;i<viewer2dList.length;i++) {
+            viewer2dList[i].send('layerChanged', enabledLayers);
         }
-        layerContainer.html(layerContent);
-//        console.log(layerList);
     }
+
     function getLayerByID(id) {
         for (let i in enabledLayers)
             if (enabledLayers[i].id==id)
@@ -831,6 +904,7 @@
     function getLayerByZIndex(z) {
         return enabledLayers[z];
     }
+
     var selectedLayerIndex = 0;
     function selectLayer(id){
         var theLayer = getLayerByID(id);
@@ -844,37 +918,72 @@
                 layerOpacitySlider.slider( "value", theLayer.opacity * 100);
         }
     }
-    function toggle2D3DView(viewid) {
-        if (viewerList[viewid]) {
-            if (viewerVisibleIndex != viewid)
-                viewerChanged = true;
-            viewerVisibleIndex = viewid;
-            for (let i in viewerList)
-                if (i==viewid)
-                    viewerList[i].style.display = 'block';
-                else
-                    viewerList[i].style.display = 'none';
-            if (viewid == 0) {
-                adjust2dViewer();
-                if (was2dLayerControlWinVis)
-                    layerControlWin.dialog( "open" );
-            } else {
-                was2dLayerControlWinVis = layerControlWin.dialog( "isOpen" );
-                if (was2dLayerControlWinVis)
-                    layerControlWin.dialog( "close" );
-            }
+
+    function setLayerOpacity(id, val) {
+        var theLayer = getLayerByID(id);
+        if (theLayer && theLayer.opacity != val/100.0) {
+            theLayer.opacity = val/100.0;
+            applyLayerControlChange();
         }
     }
-    function ToggleLoadingOverlay(show) {
-        if (!show) {
-            setTimeout(function() {
-                document.getElementById('loadingOverlay').style.display = 'none';
-            }, 2000);
-        } else
-            document.getElementById('loadingOverlay').style.display = 'block';
+    function setCurrLayerOpacity(val) {
+        setLayerOpacity(selectedLayerIndex, val);
     }
-    window.onload = function () {
+
+    function setLayerVisibility(id, visible){
+        var theLayer = getLayerByID(id);
+        if (theLayer) {
+            var layerItem = $('#layerItem'+id);
+            var btnItem = layerItem.children('.toolbtn').children('i');
+            theLayer.visible = visible;
+            if (!theLayer.visible) {
+                btnItem.addClass('ion-eye-disabled inactive');
+                btnItem.removeClass('ion-eye');
+            } else {
+                btnItem.addClass('ion-eye');
+                btnItem.removeClass('ion-eye-disabled inactive');
+            }
+            applyLayerControlChange();
+        }
+    }
+    function toogleLayerVis(id){
+        var theLayer = getLayerByID(id);
+        if (theLayer) {
+            setLayerVisibility(id, !theLayer.visible);
+        }
+    }
+
+    function moveLayerDown(){
+        let layer1 = getLayerByID(selectedLayerIndex);
+        let layer2 = getLayerByZIndex(layer1.zIndex-1);
+        if (layer1 && layer2) {
+            layer1.zIndex--;
+            layer2.zIndex++;
+            enabledLayers[layer1.zIndex] = layer1;
+            enabledLayers[layer2.zIndex] = layer2;
+            $('#layerItem'+layer1.id).insertAfter('#layerItem'+layer2.id);
+            applyLayerControlChange();
+        }
+    }
+    function moveLayerUp(){
+        let layer1 = getLayerByID(selectedLayerIndex);
+        let layer2 = getLayerByZIndex(layer1.zIndex+1);
+        if (layer1 && layer2) {
+            layer1.zIndex++;
+            layer2.zIndex--;
+            enabledLayers[layer1.zIndex] = layer1;
+            enabledLayers[layer2.zIndex] = layer2;
+            $('#layerItem'+layer1.id).insertBefore('#layerItem'+layer2.id);
+            applyLayerControlChange();
+        }
+    }
+
+    window.onload = function(){
         initPage();
     };
+    window.onresize = function() {
+        adjust2dViewer();
+    }
 </script>
+
 </html>

@@ -173,10 +173,6 @@
 </body>
 
 <script>
-
-//	if (thisThing) {
-//		debugger;
-//	}
 	var PlanParamProperty = GlobalVar.PlanParamProperty;
 	var personStateToStr = GlobalVar.personStateToStr;
 
@@ -262,7 +258,6 @@
 			if (p.baseLayerVisibleConfig.mapRoadVisible) {
 //				map.add(po.image().url(po.url("../map/GISRoadBJ/{Z}/{X}/{Y}.png")));
 			}
-
 			if (p.baseLayerVisibleConfig.personInfectVisible)
 				for (let i=0;i<5;i++) {
 					setPersonVis(i, p.baseLayerVisibleConfig.personInfectVisible[i]);
@@ -343,7 +338,8 @@
 
 	function resizeMainCanvas() {
 		if (!map) return;
-		var size = map.getSize();//map.size();
+		temp = map.getSize();
+		var size = {x:temp[0],y:temp[1]};//map.size();
 		mainCanvas.setAttribute('width',size.x);
 		mainCanvas.setAttribute('height',size.y);
 		mainCtx.viewport(0, 0, size.x, size.y);
@@ -540,7 +536,9 @@
 			center: ol.proj.transform([116.4, 40.2], 'EPSG:4326', 'EPSG:3857'),
 			zoom: 9
 		});
-		var baseLayer = new ol.layer.Tile({source: new ol.source.OSM()});
+		var baseLayer = new ol.layer.Tile({source: new ol.source.OSM(),
+			wrapX: false
+		});
 		var vector = new ol.layer.Vector({source: new ol.source.Vector()});
 		map = new ol.Map({
 			target: 'map',
@@ -556,9 +554,15 @@
 			return interact.drag.dragging();
 		}
 
-		map.on('move', function(){
+//		map.on('move', function(){
+		map.on('moveend', function(){
 			if (!settingMapParam) // 防止循环调用陷入死循环
-				ipcRenderer.sendToHost('setMapParam', map.center(), map.zoom());
+			{
+				//				ipcRenderer.sendToHost('setMapParam', map.center(), map.zoom());
+				let temp = ol.proj.toLonLat(map.getView().getCenter());
+				let center = {lon:temp[0], lat:temp[1]};//map.center();
+				ipcRenderer.sendToHost('setMapParam', center, map.getView().getZoom());
+			}
 		});
 		map.on('resize', function(){
 			resizeMainCanvas();
@@ -569,13 +573,18 @@
 			if (interact.drag.dragging())
 				return;
 
-			let pos = {x:e.clientX-mapContainer.offsetLeft,y:e.clientY-mapContainer.offsetTop};
+			let pos = {x:e.clientX-mapContainer.offsetLeft,y:e.clientY-mapContainer.offsetTop};//以左上为原点
 
-			pos = ol.proj.toLonLat([pos.x,pos.y]);
-			pos = {lon:pos[0],lat:pos[1]};
-//			ol.proj.fromLonLat([pos.lon,pos.lat]);
-//			map.pointLocationLL(pos);
-//			map.getView().setCenter(pos);
+			var mapSize = map.getSize();
+			var temp = map.getView().calculateExtent(mapSize);
+			var mapExtentL = {x:temp[0],y:temp[1]};//左下
+			var mapExtentR = {x:temp[2],y:temp[3]};//右上
+			temp = ol.proj.transform([ mapExtentL.x, mapExtentL.y], 'EPSG:3857', 'EPSG:4326');
+			var mapPosL = {x:temp[0],y:temp[1]};
+			temp = ol.proj.transform([ mapExtentR.x, mapExtentR.y], 'EPSG:3857', 'EPSG:4326');
+			var mapPosR = {x:temp[0],y:temp[1]};
+			pos = {lon:mapPosL.x+pos.x*(mapPosR.x-mapPosL.x)/mapSize[0],lat:mapPosR.y+pos.y*(mapPosL.y-mapPosR.y)/mapSize[1]};
+
 			$("#latlonLabel").html("经度："+pos.lon.toFixed(6)+" 纬度："+pos.lat.toFixed(6));
 			for (var i in layerList)
 				if (layerList[i].onMouseMove)

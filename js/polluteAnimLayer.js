@@ -289,8 +289,10 @@ function PolluteAnimLayer(layer) {
 		  }
 
 	  	if (!isPreview) {
-			  let center = map.getView().getCenter();//map.center();
-			  let size = map.getSize();
+			let temp = ol.proj.toLonLat(map.getView().getCenter());
+			let center = {lon:temp[0], lat:temp[1]};//map.center();
+			temp = map.getSize();
+			let size = {x:temp[0],y:temp[1]};//map.size();
 			  let mapedlat = Math.log(Math.tan(Math.PI / 4.0 + center.lat * Math.PI / 360.0));
 				let k = Math.pow(2, map.getView().getZoom() - 3) * 512.0 / 45.0;
 			  webgl.uniform3fv(attrMapParam, [center.lon, mapedlat, k]);
