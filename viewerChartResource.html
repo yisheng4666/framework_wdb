@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<head>
+  <title>可视化平台图表框架</title>
+	<!-- 杨国强，Created at 2016-08-16. -->
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <link rel="stylesheet" href="lib/jquery-ui/jquery-ui.css">
+  <link rel="stylesheet" href="lib/ionicons/css/ionicons.css">
+  
+	<script>
+		window.$ = window.jQuery = require('./lib/jquery-2.2.3.min.js');
+		window.echarts = require('./lib/echarts/echarts.js');
+	</script>
+	<script src="lib/jquery-ui/jquery-ui.js"></script>
+	<script src="lib/jquery-sparkline/jquery.sparkline.min.js"></script>
+  <script src="lib/echarts/myChartTheme.js"></script>
+  <script src="js/commonUtils.js"></script>
+
+  <style>
+  	body {
+  		margin:0px;
+  		font-family:宋体;
+  	}
+  	.full {
+  		position:absolute;
+  		width:100%;
+  		left:0px;
+  		top:0px;
+  		overflow:auto;
+  		margin-top:29px;
+  		margin-bottom:39px;
+  		display: flex;
+  		background-color: white;
+  	}
+  	.toolbtn {
+  		border-radius: 3px;
+  		border: 0px solid #0ab5f7;
+  		font-size: 14px;
+  		text-shadow: 0 1px 1px rgba(0,0,0,.6); 
+			background-color: rgb(3, 126, 199); 
+  		color: white;
+  		padding: 3px 6px;
+  		width: auto;
+  		display: inline-block;
+  		cursor: pointer;
+  		-webkit-user-select:none;
+  	}
+  	.toolbtn:hover { 
+			background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff)); 
+		} 
+		.toolbtn:active { 
+			background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff)); 
+		} 
+		.glyphicon.inactive { 
+			color: #ccc; 
+		} 
+		.plan-item {
+			margin: 2px;
+			border: 1px solid #0163a9;
+			width: 100%;
+			background-color: white;
+			font-size: 13px;
+		}
+		.plan-item:hover {
+			border: 1px solid #3396ff;
+		}
+		.plan-item-col {
+			margin-bottom:3px;
+		}
+		.plan-item-title {
+	    color: white;
+	    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.97);
+	    font-size: 18px;
+	    padding-left: 5px;
+	    text-align: center;
+	    background-color: rgb(16, 98, 164);
+	    font-family: 微软雅黑;
+	    padding: 3px;
+		}
+		.plan-item-subtitle {
+	    color: white;
+	    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.97);
+	    font-size: 15px;
+	    padding-left: 5px;
+	    text-align: center;
+	    background-color: rgb(7, 55, 113);
+	    font-family: 微软雅黑;
+	    padding: 3px;
+		}
+		.plan-item-param {
+			color: black;
+    	padding: 5px;
+		}
+		.plan-item-sankey {
+			height: 300px;
+		}
+		.plan-item-legend {
+			height: 60px;
+		}
+		.plan-item-pie {
+			height: 250px;
+		}
+		.plan-item-line {
+			height: 300px;
+			margin: 10px;
+		}
+		.plan-item-select {
+			margin-top: 10px;
+			padding-left: 50px;
+		}
+		.res-table {
+			width: 100%;
+			border-spacing: 1px;
+		}
+		.res-table td {
+			border: 0px solid #fff;
+		}
+		.res-table th {
+			background-color: rgb(0, 44, 99);
+	    color: white;
+		}
+		.res-item {
+		}
+		.res-item.odd {
+			background-color: rgb(216, 234, 245);
+		}
+		.res-item:hover {
+			background-color: rgb(117, 170, 253);
+		}
+ 	</style>
+</head>
+<body style="overflow:auto;">
+<div id="PlanListContainer" class="full"></div>
+</body>
+  
+<script>
+	
+var PlanParamProperty = GlobalVar.PlanParamProperty;
+
+var PlanDataList;  // 策略列表
+var timeIndex = -1;
+var dataChanged = false;
+
+var ResLineList; // 图表列表
+var ResListTimeData; // 图表所需资源消耗随时间变化数据
+
+// 人口状态对应的颜色
+var PersonStateColors = ['#2160f8', '#f49205', '#f41265', '#62f212', '#f21511', '#546570'];
+
+// 读取资源消耗数据
+var resourceListData = []; // 与当前策略列表对应的资源数据列表
+var resourceTotalData = {}; // 所有策略的资源数据
+fs.readFile('./data/resource/ResConsume.json', function(err, data){
+	if (err) {
+		console.error('无法读取资源消耗数据文件：./data/resource/ResConsume.json');
+		return;
+	}
+	if (data)
+		resourceTotalData = JSON.parse(data);
+});
+
+
+function onTick(t) {
+	if (!resourceListData || resourceListData.length<=0)
+		return;
+		
+	let pData = resourceListData[0];
+	t = Date.parse(t);
+	// 数据采样为半小时一次，根据当前时间t计算对应的采样数据timeIndex
+	let oldIndex = timeIndex;
+	timeIndex = ( (t-GlobalVar.BaseDate) / 1800000 ) | 0;
+	if (timeIndex<0)
+		timeIndex = 0;
+	if (timeIndex>pData.stateData.length-1)
+		timeIndex = pData.stateData.length-1;
+		
+	// 时间进度往前跳，初始化统计数据
+	if (timeIndex<oldIndex) {
+		for (let p in PlanDataList) {
+			for (let r in resourceListData[p].resTimeNum)
+				resourceListData[p].resTimeNum[r] = [];
+		}
+
+		oldIndex = -1;
+	}
+	
+	// 数据变化时更新统计数据
+	for (let p in PlanDataList) {
+		for (let i=oldIndex+1;i<=timeIndex;i++) {
+			dataChanged = true;
+			let simTime = new Date(GlobalVar.BaseDate + 1800000 * i);
+
+			let resTimeData = resourceListData[p].resTimeNum;
+			let tData = resourceListData[p].stateData[i];
+			if (resTimeData && resTimeData.length>0 && tData) {
+				for (let r=0;r<resourceListData[p].resList.length;r++) {
+					resTimeData[r].push(tData[r]);
+					if (resTimeData[r].length>20)
+						resTimeData[r].shift();
+				}
+			}
+		}
+	}
+	
+	// 采样数据变化时更新图表
+	if (dataChanged) {
+		for (let p in PlanDataList) {
+	  	if (resourceListData[p]) {
+	  		let tData = resourceListData[p].stateData[timeIndex];
+	  		let resLength = resourceListData[p].resList.length;
+	  		if (tData && tData.length>=resLength) {
+		  		for (let r=0;r<resLength;r++) {
+		  			document.getElementById('ResAvailNum'+p+'_'+r).innerText = tData[r];
+	  				let num = tData[r];
+	  				let total = resourceListData[p].resList[r].totalReal;
+	  				$('#ResRatioNum'+p+'_'+r).text((num/total*100).toFixed(2)+'%');
+	  				$('#ResRatioSpark'+p+'_'+r).sparkline([num,total-num], {type:'pie'});
+	  			}
+		  	}
+		  	tData = resourceListData[p].resTimeNum;
+		  	if (tData) {
+		  		for (let r=0;r<resLength;r++) {
+		  			if (tData[r]) {
+		  				$('#ResAvailSpark'+p+'_'+r).sparkline(tData[r]);
+		  			}
+		  		}
+		  	}
+	  	}
+		}
+	}
+}
+
+var ipcRenderer = require('electron').ipcRenderer;
+ipcRenderer.on('tick', function(sender, t) {
+	onTick(t);
+});
+ipcRenderer.on('initPlan', function(sender, p) {
+	PlanDataList = p.planList;
+	let t = p.time;
+	
+	initCharts();
+	onTick(t);
+	
+});
+function initCharts() {
+	// 初始化统计数据
+	timeIndex = -1;
+		
+	ResListTimeData = [];
+	for (let p in PlanDataList) {
+		let planParam = PlanDataList[p].params;
+		if (!resourceTotalData[planParam[0]] || !resourceTotalData[planParam[0]][planParam[1]])
+			continue;
+		let resData = resourceTotalData[planParam[0]][planParam[1]];
+		resourceListData[p] = resData;
+		resData.resTimeNum = [];
+		for (let r=0;r<resData.resList.length;r++) {
+			resData.resTimeNum[r] = new Array(20);
+			resData.resTimeNum[r].fill(0);
+		}
+			
+		ResListTimeData[p] = [];
+		for (let r=0;r<resData.resList.length;r++)
+			ResListTimeData[p][r] = [];
+		for (let i=0;i<=resData.stateData.length;i++) {
+  		let tData = resData.stateData[i];
+			let simTime = new Date(GlobalVar.BaseDate + 1800000 * i);
+			if (tData) {
+				for (let r=0;r<resData.resList.length;r++) {
+					ResListTimeData[p][r].push([simTime, tData[r]]);
+				}
+			}
+		}
+	}
+	
+	if (resourceListData.length<=0)
+		return;
+		
+	let selectOptStr = '';
+	for (let r in resourceListData[0].resList)
+		selectOptStr += '<option>'+resourceListData[0].resList[r].name+'</option>';
+	
+	// 初始化界面dom
+	let s = '';
+	for (let p in PlanDataList) {
+		s += '<div class="plan-item">'
+			+'<div class="plan-item-col"><div class="plan-item-title">策略'+(p)+'</div>';
+		for (let i in PlanParamProperty)
+			s += '<div class="plan-item-param">'+(PlanParamProperty[i].name+'：'+((PlanParamProperty[i].isPercent?100:1)*PlanDataList[p].params[i]))+'</div>'
+		s += '</div><div class="plan-item-col"><div class="plan-item-subtitle">资源消耗情况统计</div>'
+			+'<div id="PlanItemResConsume'+p+'"></div></div>'
+			+'<div class="plan-item-col"><div class="plan-item-subtitle">资源消耗随时间变化情况</div>'
+			+'<div class="plan-item-select"><span>选择资源：</span><select class="" id="PlanItemResTimeSelect0_'+p+'">'+selectOptStr+'</select></div>'
+			+'<div class="plan-item-line" id="PlanItemResTime0_'+p+'"></div>'
+			+'<div class="plan-item-select"><span>选择资源：</span><select class="" id="PlanItemResTimeSelect1_'+p+'">'+selectOptStr+'</select></div>'
+			+'<div class="plan-item-line" id="PlanItemResTime1_'+p+'"></div>'
+			+'<div class="plan-item-select"><span>选择资源：</span><select class="" id="PlanItemResTimeSelect2_'+p+'">'+selectOptStr+'</select></div>'
+			+'<div class="plan-item-line" id="PlanItemResTime2_'+p+'"></div>'
+			+'</div>'
+			+'</div>';
+	}
+	document.getElementById('PlanListContainer').innerHTML = s;
+	
+	for (let p in resourceListData) {
+		// 创建资源消耗数据表格
+		let resData = resourceListData[p];
+		let s='<table class="res-table"><tr style="background-color: rgb(3, 226, 249)"><th>名称</th><th>总数</th><th>实际储备数</th><th>当前可用数</th><th>当前可用百分比</th></tr>';
+		for (let r=0;r<resData.resList.length;r++) {
+			s += '<tr class="res-item '+(r%2?'odd':'')+'" title="'+resData.resList[r].name+'\n'+resData.resList[r].shortname+'\n单位：'+resData.resList[r].unit+'">';
+			s += '<td>'+resData.resList[r].name+'</td><td>'+resData.resList[r].total+'</td>';
+			s += '<td>'+resData.resList[r].totalReal+'</td>';
+			s += '<td><span id="ResAvailSpark'+(p+'_'+r)+'"></span><span id="ResAvailNum'+(p+'_'+r)+'"></span></td>';
+			s += '<td><span id="ResRatioSpark'+(p+'_'+r)+'"></span><span id="ResRatioNum'+(p+'_'+r)+'"></span></td>';
+			s += '</tr>';
+		}
+		s += '</table>';
+		document.getElementById('PlanItemResConsume'+p).innerHTML = s;
+	}
+	
+	ResLineList = [];
+	let resLineListAll = [];
+	for (let p in resourceListData) {
+		ResLineList[p] = [];
+		for (let c=0;c<3;c++) {
+			if (c>=resourceListData[p].resList.length)
+				break;
+			
+			// 初始化资源选择下拉框
+			let selector = document.getElementById('PlanItemResTimeSelect'+c+'_'+p);
+			selector.selectedIndex = c;
+			selector.chartIndex = c;
+			selector.planIndex = p;
+			selector.addEventListener('change', function(){
+				let currIndex = this.planIndex;
+				let cIndex = this.chartIndex;
+				let res = this.selectedIndex;
+				for (let pIndex in PlanDataList) {
+					if (ResLineList[pIndex][cIndex] && resourceListData[pIndex].resList[res]) {
+						ResLineList[pIndex][cIndex].getModel().getSeriesByIndex(0).name = resourceListData[pIndex].resList[res].name;
+						ResLineList[pIndex][cIndex].setOption({series:[{name:resourceListData[pIndex].resList[res].name, data: ResListTimeData[pIndex][res],}]});
+					}
+					if (currIndex!=pIndex)
+						document.getElementById('PlanItemResTimeSelect'+cIndex+'_'+pIndex).selectedIndex = res;
+				}
+			});
+			
+			// 初始化资源图表
+			var myChart = echarts.init(document.getElementById('PlanItemResTime'+c+'_'+p), 'shine');
+			ResLineList[p].push(myChart);
+			resLineListAll.push(myChart);
+			var option = {
+				title: {
+					show: false,
+					x: 'center',
+					text: '',
+					textStyle: {
+					    color: '#136',
+					    fontSize: 15
+					}
+				},
+				color: [PersonStateColors[c]],
+				legend: {
+					show: false,
+				},
+				grid: {
+					top: 10,
+					bottom: 75,
+					right: 15,
+					left: 65,
+				},
+		    tooltip: {
+		        trigger: 'axis',
+		        axisPointer: {
+		            animation: false
+		        }
+		    },
+		    dataZoom: {
+		    	show: true,
+		    },
+		    toolbox: {
+	        show : false,
+	        feature : {
+	            mark : {show: true},
+	            dataView : {show: true, readOnly: true},
+	            magicType : {
+	                show: true,
+	                type: ['line', 'bar', 'stack']
+	            },
+	            restore : {show: true},
+	            saveAsImage : {show: true}
+	        }
+	      },
+				xAxis: {
+				    type: 'time',
+				    splitLine: {
+				      show: false
+				    },
+				    axisLabel: {
+				    	show: true,
+				    }
+				},
+				yAxis: {
+				    type: 'value',
+				    boundaryGap: [0, '100%'],
+				    splitLine: {
+				      show: false
+				    },
+				    axisLabel: {
+				    	show: true,
+				    }
+				},
+		    series: [{
+					name: resourceListData[p].resList[c].name,
+		      type: 'line',
+	        showSymbol: false,
+	        hoverAnimation: false,
+		      data: ResListTimeData[p][c],
+		    }]
+			};
+			myChart.setOption(option);
+		}
+	}
+	echarts.connect(resLineListAll);
+}
+
+window.onload = function(){
+	
+};
+
+</script>
+  
+</html>

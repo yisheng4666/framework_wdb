@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<head>
+  <title>可视化平台图表框架</title>
+	<!-- 杨国强，Created at 2016-08-16. -->
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <link rel="stylesheet" href="lib/jquery-ui/jquery-ui.css">
+  <link rel="stylesheet" href="lib/ionicons/css/ionicons.css">
+  
+	<script>
+		window.$ = window.jQuery = require('./lib/jquery-2.2.3.min.js');
+		window.echarts = require('./lib/echarts/echarts.js');
+	</script>
+	<script src="lib/jquery-ui/jquery-ui.js"></script>
+  <script src="lib/echarts/myChartTheme.js"></script>
+  <script src="js/commonUtils.js"></script>
+
+  <style>
+  	body {
+  		margin:0px;
+  		font-family:宋体;
+  		overflow:auto;
+  	}
+  	.full {
+  		position:absolute;
+  		width:100%;
+  		left:0px;
+  		top:0px;
+  		margin-top:29px;
+  		margin-bottom:39px;
+  		overflow:auto;
+  		display: flex;
+  		background-color: white;
+  	}
+  	.toolbtn {
+  		border-radius: 3px;
+  		border: 0px solid #0ab5f7;
+  		font-size: 14px;
+  		text-shadow: 0 1px 1px rgba(0,0,0,.6); 
+			background-color: rgb(3, 126, 199); 
+  		color: white;
+  		padding: 3px 6px;
+  		width: auto;
+  		display: inline-block;
+  		cursor: pointer;
+  		-webkit-user-select:none;
+  	}
+  	.toolbtn:hover { 
+			background: -webkit-gradient(linear, left top, left bottom, from(#207ace), to(#72beff)); 
+		} 
+		.toolbtn:active { 
+			background: -webkit-gradient(linear, left top, left bottom, from(#72beff), to(#72beff)); 
+		} 
+		.glyphicon.inactive { 
+			color: #ccc; 
+		} 
+		.plan-item {
+			margin: 2px;
+			border: 1px solid #0163a9;
+			width: 100%;
+			background-color: white;
+		}
+		.plan-item:hover {
+			border: 1px solid #3396ff;
+		}
+		.plan-item-col {
+			margin-bottom:3px;
+		}
+		.plan-item-title {
+	    color: white;
+	    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.97);
+	    font-size: 18px;
+	    padding-left: 5px;
+	    text-align: center;
+	    background-color: rgb(16, 98, 164);
+	    font-family: 微软雅黑;
+	    padding: 3px;
+		}
+		.plan-item-subtitle {
+	    color: white;
+	    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.97);
+	    font-size: 15px;
+	    padding-left: 5px;
+	    text-align: center;
+	    background-color: rgb(7, 55, 113);
+	    font-family: 微软雅黑;
+	    padding: 3px;
+		}
+		.plan-item-param {
+			color: black;
+    	font-size: 13px;
+    	padding: 5px;
+		}
+		.plan-item-sankey {
+			height: 300px;
+		}
+		.plan-item-legend {
+			height: 60px;
+		}
+		.plan-item-pie {
+			height: 250px;
+		}
+		.plan-item-line {
+			height: 300px;
+		}
+		.res-table {
+			width: 100%;
+			border-spacing: 1px;
+		}
+		.res-table td {
+			border: 0px solid #fff;
+			font-size: 10pt;
+		}
+		.res-table th {
+			background-color: rgb(0, 44, 99);
+	    color: white;
+	    font-size: 10pt;
+		}
+		.res-item {
+		}
+		.res-item.odd {
+			background-color: rgb(216, 234, 245);
+		}
+		.res-item:hover {
+			background-color: rgb(117, 170, 253);
+		}
+ 	</style>
+</head>
+<body style="">
+<div id="PlanListContainer" class="full"></div>
+</body>
+  
+<script>
+	
+var PlanParamProperty = GlobalVar.PlanParamProperty;
+var BaseDate = GlobalVar.BaseDate;
+var personStateToStr = GlobalVar.personStateToStr;
+
+var PlanList;			// 策略列表
+var PlanDataList;
+var timeIndex = -1;
+var dataChanged = false;
+
+// 人口状态对应的颜色
+var PersonStateColors = ['#2160f8', '#f49205', '#f41265', '#62f212', '#f21511', '#546570'];
+
+// 各种图表列表
+var SankeyChartList;
+var SumCountPieList;
+var SumCountLineList, SumTimeCountLineList;
+
+
+// 初始状态及五种状态人口的总数、当前总数；各时刻总数、当前总数
+var personSumCount, personSumTimeCount;
+var personSumCountTimeData, personSumTimeCountTimeData;
+
+// 人口状态转换的数量
+var personStateTransitNum;
+
+
+function onTick(t) {
+	if (!PlanDataList || PlanDataList.length<=0)
+		return;
+		
+	let pData = PlanDataList[0].data;
+	t = Date.parse(t);
+	// 数据采样为半小时一次，根据当前时间t计算对应的采样数据timeIndex
+	let oldIndex = timeIndex;
+	timeIndex = ( (t-BaseDate) / 1800000 ) | 0;
+	if (timeIndex<0)
+		timeIndex = 0;
+	if (timeIndex>pData.stateData.length-1)
+		timeIndex = pData.stateData.length-1;
+		
+	// 时间进度往前跳，初始化人口总数
+	if (timeIndex<oldIndex) {
+		for (let p in PlanDataList) {
+			for (let s=0;s<5;s++) {
+				personSumCount[p][s] = 0;
+				personSumTimeCount[p][s] = 0;
+				for (let l=0;l<5;l++)
+					personStateTransitNum[p][s][l] = 0;
+			}
+			for (let s=0;s<5;s++) {
+				personSumCountTimeData[p][s] = [];
+				personSumTimeCountTimeData[p][s] = [];
+			}
+		}
+
+		oldIndex = -1;
+	}
+	
+	// 数据变化时更新统计数据
+	for (let p in PlanDataList) {
+		let sData = PlanDataList[p].data.stateData;
+		for (let i=oldIndex+1;i<=timeIndex;i++) {
+			dataChanged = true;
+			let simTime = new Date(BaseDate + 1800000 * i);
+			let td = sData[i];
+			for (let j=0;j<td.length;j+=3) {
+				personSumCount[p][ td[j+2] ] ++;
+				personSumTimeCount[p][ td[j+2] ] ++;
+				if (td[j+1]>=0) {
+					personSumTimeCount[p][ td[j+1] ] --;
+					personStateTransitNum[p][ td[j+1] ][ td[j+2] ] ++;
+				}
+			}
+			
+			for (let s=0;s<5;s++) {
+				personSumCountTimeData[p][s].push([simTime, personSumCount[p][s]]);
+				personSumTimeCountTimeData[p][s].push([simTime, personSumTimeCount[p][s]]);
+			}
+		}
+	}
+	
+	// 数据变化时更新图表
+	if (dataChanged) {
+		for (let p in PlanDataList) {
+			let sData = [], sLink = [], sTimeData=[];
+			for (let s=0;s<5;s++) {
+				sData.push({name:personStateToStr(s), value:personSumCount[p][s]});
+				for (let l=0;l<5;l++)
+					if (personStateTransitNum[p][s][l]>0)
+						sLink.push({source:personStateToStr(s), target:personStateToStr(l), value:personStateTransitNum[p][s][l]});
+			}
+			SankeyChartList[p].setOption({
+		        series: [{data: sData, links:sLink}]
+		  });
+		  
+		  sData=[]; sTimeData=[];
+		  for (let s=0;s<5;s++) {
+		  	sData.push({name:personStateToStr(s),value:personSumCount[p][s]});
+		  	sTimeData.push({name:personStateToStr(s),value:personSumTimeCount[p][s]});
+		  }
+	  	SumCountPieList[p].setOption({
+	  		series: [{data: sData},{data: sTimeData}]
+	  	});
+	  	
+	  	sData=[]; sTimeData=[];
+	  	for (let s=0;s<5;s++) {
+	  		sData.push({data:personSumCountTimeData[p][s]});
+	  		sTimeData.push({data:personSumTimeCountTimeData[p][s]});
+	  	}
+	  	SumCountLineList[p].setOption({
+	  		series: sData
+	  	});
+	  	SumTimeCountLineList[p].setOption({
+	  		series: sTimeData
+	  	});
+	  	
+		}
+	}
+}
+
+var ipcRenderer = require('electron').ipcRenderer;
+ipcRenderer.on('tick', function(sender, t) {
+	onTick(t);
+});
+ipcRenderer.on('initPlan', function(sender, p) {
+	PlanList = p.planList;
+	let t = p.time;
+	PlanDataList = [];
+	
+	function readPlanData(p, callback) {
+		if (p<PlanList.length) {
+			let fname = './data/person/PersonInfect';
+			for (let i in PlanList[p].params)
+				fname += '_'+PlanList[p].params[i];
+			fs.readFile(fname+'.json', function(err, data){
+				if (!err && data)
+					PlanDataList.push({params:PlanList[p].params, data: JSON.parse(data)});
+				readPlanData(p+1, callback);
+			});
+		} else {
+			callback();
+		}
+	}
+
+	readPlanData(0, function(){
+		// 数据加载完毕后初始化图表
+		initCharts();
+		onTick(t);
+	});
+	
+});
+function initCharts() {
+	// 初始化界面dom
+	let s = '';
+	for (let p in PlanDataList) {
+		s += '<div class="plan-item">'
+			+'<div class="plan-item-col"><div class="plan-item-title">策略'+(p)+'</div>';
+		for (let i in PlanParamProperty)
+			s += '<div class="plan-item-param">'+(PlanParamProperty[i].name+'：'+((PlanParamProperty[i].isPercent?100:1)*PlanDataList[p].params[i]))+'</div>'
+		s += '</div><div class="plan-item-col"><div class="plan-item-subtitle">各状态人口总数及状态间转换数量</div><div class="plan-item-sankey" id="PlanItemSunkeyChart'+p+'"></div></div>'
+			+'<div class="plan-item-col"><div class="plan-item-subtitle">受影响人口状态总数</div>'
+			+'<div class="plan-item-pie" id="PlanItemSumPie'+p+'"></div>'
+			+'<div class="plan-item-line" id="PlanItemSumLine'+p+'"></div>'
+			+'<div class="plan-item-line" id="PlanItemSumTimeLine'+p+'"></div>'
+			+'</div>'
+			+'<div class="plan-item-col"></div>'
+			+'</div>';
+	}
+	document.getElementById('PlanListContainer').innerHTML = s;
+	
+	// 初始化统计数据
+	timeIndex = -1;
+	personStateTransitNum = [];
+	for (let p in PlanDataList) {
+		personStateTransitNum[p] = [];
+		for (let s=0;s<6;s++) {
+			personStateTransitNum[p][s] = [];
+			for (let i=0;i<5;i++)
+				personStateTransitNum[p][s][i] = 0;
+		}
+	}
+	personSumCount = [];
+	personSumTimeCount = [];
+	for (let p in PlanDataList) {
+		personSumCount[p] = [];
+		personSumTimeCount[p] = [];
+		for (let s=0;s<5;s++)
+			personSumCount[p][s] = 0;
+		for (let s=0;s<5;s++)
+			personSumTimeCount[p][s] = 0;
+	}
+	personSumCountTimeData = [];
+	personSumTimeCountTimeData = [];
+	for (let p in PlanDataList) {
+		personSumCountTimeData[p] = [];
+		personSumTimeCountTimeData[p] = [];
+		for (let s=0;s<5;s++) {
+			personSumCountTimeData[p][s] = [];
+			personSumTimeCountTimeData[p][s] = [];
+		}
+	}
+		
+	// 创建图表
+	SankeyChartList = [];
+	for (let p in PlanDataList) {
+		var myChart = echarts.init(document.getElementById('PlanItemSunkeyChart'+p), 'shine');
+		SankeyChartList.push(myChart);
+		var option = {
+			title: {
+				show: false,
+			},
+	    tooltip: {
+	        trigger: 'item',
+	        triggerOn: 'mousemove',
+	    },
+	    series: [{
+	        type: 'sankey',
+	        nodeGap: 16,
+	        itemStyle: {
+	        	normal: {
+			        color: PersonStateColors,
+	        	}
+	        },
+	        data: [],
+	        links: []
+	    }]
+		};
+		for (let s=0;s<5;s++)
+			option.series[0].data[s] = {name: personStateToStr(s), value: 0};
+		myChart.setOption(option);
+	}
+	
+	SumCountPieList = [];
+	for (let p in PlanDataList) {
+		var myChart = echarts.init(document.getElementById('PlanItemSumPie'+p), 'shine');
+		SumCountPieList.push(myChart);
+		var option = {
+			title: {
+				show: false,
+			},
+      color: PersonStateColors,
+			legend: {
+				data: [],
+				show: true,
+				x: 'center',
+			},
+	    tooltip: {
+	      trigger: 'item',
+	      triggerOn: 'mousemove',
+        formatter: "{a} <br/>{b} : {c} ({d}%)"
+	    },
+	    calculable : true,
+	    series: [{
+	    	name: '曾处于该状态人口总数',
+	      type: 'pie',
+	      radius: '60%',
+	      center : ['25%', '50%'],
+	      data: [],
+	    },{
+	    	name: '当前处于该状态人口总数',
+	      type: 'pie',
+	      radius: '60%',
+	      center : ['75%', '50%'],
+	      data: [],
+	    }]
+		};
+		for (let s=0;s<5;s++) {
+			option.legend.data.push(personStateToStr(s));
+			option.series[0].data[s] = {name: personStateToStr(s), value: 0};
+			option.series[1].data[s] = {name: personStateToStr(s), value: 0};
+		}
+		myChart.setOption(option);
+	}
+	echarts.connect(SumCountPieList);
+
+	SumCountLineList = [];
+	for (let p in PlanDataList) {
+		var myChart = echarts.init(document.getElementById('PlanItemSumLine'+p), 'shine');
+		SumCountLineList.push(myChart);
+		var option = {
+			title: {
+				show: true,
+				x: 'center',
+				text: '曾处于该状态人口总数',
+				textStyle: {
+				    color: '#136',
+				    fontSize: 15
+				}
+			},
+			color: PersonStateColors,
+			legend: {
+				data: [],
+				show: true,
+				x: 'center',
+				y: 25,
+			},
+			grid: {
+				top: 40,
+				bottom: 75,
+				right: 15,
+				left: 65,
+			},
+	    tooltip: {
+	        trigger: 'axis',
+	        axisPointer: {
+	            animation: false
+	        }
+	    },
+	    dataZoom: {
+	    	show: true,
+	    },
+	    toolbox: {
+        show : false,
+        feature : {
+            mark : {show: true},
+            dataView : {show: true, readOnly: true},
+            magicType : {
+                show: true,
+                type: ['line', 'bar', 'stack']
+            },
+            restore : {show: true},
+            saveAsImage : {show: true}
+        }
+      },
+			xAxis: {
+			    type: 'time',
+			    splitLine: {
+			      show: false
+			    },
+			    axisLabel: {
+			    	show: true,
+			    }
+			},
+			yAxis: {
+			    type: 'value',
+			    boundaryGap: [0, '100%'],
+			    splitLine: {
+			      show: false
+			    },
+			    axisLabel: {
+			    	show: true,
+			    }
+			},
+	    series: []
+		};
+		for (let s=0;s<5;s++) {
+			option.legend.data.push(personStateToStr(s));
+			option.series.push({
+				name: personStateToStr(s),
+	      type: 'line',
+        showSymbol: false,
+        hoverAnimation: false,
+	      data: [],
+	    });
+	  }
+		myChart.setOption(option);
+	}
+
+	SumTimeCountLineList = [];
+	for (let p in PlanDataList) {
+		var myChart = echarts.init(document.getElementById('PlanItemSumTimeLine'+p), 'shine');
+		SumTimeCountLineList.push(myChart);
+		var option = {
+			title: {
+				show: true,
+				x: 'center',
+				text: '当前处于该状态人口总数',
+				textStyle: {
+				    color: '#136',
+				    fontSize: 15
+				}
+			},
+			color: PersonStateColors,
+			legend: {
+				data: [],
+				show: true,
+				x: 'center',
+				y: 25,
+			},
+			grid: {
+				top: 40,
+				bottom: 75,
+				right: 5,
+				left: 65,
+			},
+	    tooltip: {
+	        trigger: 'axis',
+	        axisPointer: {
+	            animation: false
+	        }
+	    },
+	    dataZoom: {
+	    	show: true,
+	    },
+			xAxis: {
+			    type: 'time',
+			    splitLine: {
+			      show: false
+			    },
+			    axisLabel: {
+			    	show: true,
+			    }
+			},
+			yAxis: {
+			    type: 'value',
+			    boundaryGap: [0, '100%'],
+			    splitLine: {
+			      show: false
+			    },
+			    axisLabel: {
+			    	show: true,
+			    }
+			},
+	    series: []
+		};
+		for (let s=0;s<5;s++) {
+			option.legend.data.push(personStateToStr(s));
+			option.series.push({
+				name: personStateToStr(s),
+	      type: 'line',
+        showSymbol: false,
+        hoverAnimation: false,
+	      data: [],
+	    });
+	  }
+		myChart.setOption(option);
+	}
+	echarts.connect(SumTimeCountLineList.concat(SumCountLineList));
+	
+	
+}
+
+window.onload = function(){
+	
+};
+
+</script>
+  
+</html>
