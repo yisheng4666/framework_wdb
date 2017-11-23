@@ -160,6 +160,7 @@
 <body style="height:100%;width:100%;overflow:hidden">
 
 <div id="map" class="full" style="z-index:0"></div>
+<div id="mouse-position"></div>
 <canvas id="layerMainCanvas" width="600" height="500" class="full noinput" style="z-index:1"></canvas>
 <canvas id="layerWindCanvas" width="600" height="500" class="full noinput" style="z-index:1"></canvas>
 
@@ -540,9 +541,26 @@
 			wrapX: false
 		});
 		var vector = new ol.layer.Vector({source: new ol.source.Vector()});
+
+		/*----------------检测鼠标所在位置-----------------*/
+		var mousePositionControl = new ol.control.MousePosition({
+			coordinateFormat:ol.coordinate.createStringXY(12),
+			projection:'EPSG:4326',
+//			className:'ol-mouse-position',
+			className:'custom-mouse-position',
+			target: document.getElementById('mouse-position'),
+			undefinedHTML: '&nbsp;'
+		});
+
 		map = new ol.Map({
 			target: 'map',
-			controls: [],
+			controls:ol.control.defaults({
+				attributionOptions:({
+					collapsible:false
+				})
+			}).extend([
+				mousePositionControl
+			]),
 			layers: [
 				baseLayer,
 //				vector
@@ -573,19 +591,26 @@
 			if (interact.drag.dragging())
 				return;
 
-			let pos = {x:e.clientX-mapContainer.offsetLeft,y:e.clientY-mapContainer.offsetTop};//以左上为原点
+			// 采用屏幕坐标计算得到地图坐标
+//			let pos = {x:e.clientX-mapContainer.offsetLeft,y:e.clientY-mapContainer.offsetTop};//以左上为原点
+//
+//			var mapSize = map.getSize();
+//			var temp = map.getView().calculateExtent(mapSize);
+//			var mapExtentL = {x:temp[0],y:temp[1]};//左下
+//			var mapExtentR = {x:temp[2],y:temp[3]};//右上
+//			temp = ol.proj.transform([ mapExtentL.x, mapExtentL.y], 'EPSG:3857', 'EPSG:4326');
+//			var mapPosL = {x:temp[0],y:temp[1]};
+//			temp = ol.proj.transform([ mapExtentR.x, mapExtentR.y], 'EPSG:3857', 'EPSG:4326');
+//			var mapPosR = {x:temp[0],y:temp[1]};
+//			pos = {lon:mapPosL.x+pos.x*(mapPosR.x-mapPosL.x)/mapSize[0],lat:mapPosR.y+pos.y*(mapPosL.y-mapPosR.y)/mapSize[1]};
 
-			var mapSize = map.getSize();
-			var temp = map.getView().calculateExtent(mapSize);
-			var mapExtentL = {x:temp[0],y:temp[1]};//左下
-			var mapExtentR = {x:temp[2],y:temp[3]};//右上
-			temp = ol.proj.transform([ mapExtentL.x, mapExtentL.y], 'EPSG:3857', 'EPSG:4326');
-			var mapPosL = {x:temp[0],y:temp[1]};
-			temp = ol.proj.transform([ mapExtentR.x, mapExtentR.y], 'EPSG:3857', 'EPSG:4326');
-			var mapPosR = {x:temp[0],y:temp[1]};
-			pos = {lon:mapPosL.x+pos.x*(mapPosR.x-mapPosL.x)/mapSize[0],lat:mapPosR.y+pos.y*(mapPosL.y-mapPosR.y)/mapSize[1]};
+			// 采用OpenLayersMousePosition控件计算得到地图坐标
+			var mousePosition = document.getElementById('mouse-position').innerText;
+			mousePosition = mousePosition.split(", ");
+			let pos = {lon:Number.parseFloat(mousePosition[0]),lat:Number.parseFloat(mousePosition[1])};
+//			pos = {lon:Number(mousePosition[0]),lat:Number(mousePosition[1])};
 
-			$("#latlonLabel").html("经度："+pos.lon.toFixed(6)+" 纬度："+pos.lat.toFixed(6));
+			$("#latlonLabel").html("经度："+pos.lon.toFixed(6) +" 纬度："+pos.lat.toFixed(6));
 			for (var i in layerList)
 				if (layerList[i].onMouseMove)
 					layerList[i].onMouseMove(pos);
