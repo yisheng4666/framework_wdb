@@ -350,7 +350,8 @@ function GeoJSONLayer(layer) {
         let theFeature = null;
         for (var i = 0; i < features.length; i++) {
             let geometry = features[i].getGeometry();
-            if (geometry.containsCoordinate(coordinate)) {
+            // if (geometry.containsCoordinate(coordinate)) {
+            if (geometry.intersectsCoordinate(coordinate)) {
                 theFeature = features[i];
                 info = features[i].get('县名称') + ' ' + features[i].get('NAME');
                 break;

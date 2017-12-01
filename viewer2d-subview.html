@@ -155,12 +155,61 @@
 		}
 		.noinput { pointer-events: none; }
 
+		.ol-popup {
+			position: absolute;
+			background-color: white;
+			-webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+			filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+			padding: 15px;
+			border-radius: 10px;
+			border: 1px solid #cccccc;
+			bottom: 12px;
+			left: -50px;
+			min-width: 280px;
+		}
+		.ol-popup:after, .ol-popup:before {
+			top: 100%;
+			border: solid transparent;
+			content: " ";
+			height: 0;
+			width: 0;
+			position: absolute;
+			pointer-events: none;
+		}
+		.ol-popup:after {
+			border-top-color: white;
+			border-width: 10px;
+			left: 48px;
+			margin-left: -10px;
+		}
+		.ol-popup:before {
+			border-top-color: #cccccc;
+			border-width: 11px;
+			left: 48px;
+			margin-left: -11px;
+		}
+		.ol-popup-closer {
+			text-decoration: none;
+			position: absolute;
+			top: 2px;
+			right: 8px;
+		}
+		.ol-popup-closer:after {
+			content: "✖";
+		}
 	</style>
 </head>
 <body style="height:100%;width:100%;overflow:hidden">
+<div id="popup" class="ol-popup">
+	<a href="#" id="popup-closer" class="ol-popup-closer"></a>
+	<div id="popup-content"></div>
+</div>
 
-<div id="map" class="full" style="z-index:0"></div>
-<div id="mouse-position"></div>
+<div id="mouse-position"style="display: none"></div>
+
+<div id="map" class="full" style="z-index:0;">
+</div>
+
 <canvas id="layerMainCanvas" width="600" height="500" class="full noinput" style="z-index:1"></canvas>
 <canvas id="layerWindCanvas" width="600" height="500" class="full noinput" style="z-index:1"></canvas>
 
@@ -174,6 +223,11 @@
 </body>
 
 <script>
+	var overlay;
+	var container = document.getElementById('popup');
+	var content = document.getElementById('popup-content');
+	var closer = document.getElementById('popup-closer');
+
 	var PlanParamProperty = GlobalVar.PlanParamProperty;
 	var personStateToStr = GlobalVar.personStateToStr;
 
@@ -184,6 +238,10 @@
 	var personChartNew = [], personChartChange = [], personChartSum = []; // 新增人口和减少人口和累计人口图表
 
 	var map;
+	//绘制图形
+	var drawSource;
+	var drawLayer;
+
 	var mapLayer;
 	var relatedInfoWin;
 	var mainCanvas = document.getElementById('layerMainCanvas');
@@ -204,14 +262,73 @@
 				layerList[i].onTick(t);
 	}
 
+	var draw;
+	function drawTypeChange(drawTypeSelectValue) {
+		var value = drawTypeSelectValue;
+		console.log(value);
+		if (value !== 'None') {
+			var geometryFunction;
+			if (value === 'Square') {
+				value = 'Circle';
+				geometryFunction = ol.interaction.Draw.createRegularPolygon(4);
+			} else if (value === 'Box') {
+				value = 'Circle';
+				geometryFunction = ol.interaction.Draw.createBox();
+			} else if (value === 'Star') {
+				value = 'Circle';
+				geometryFunction = function(coordinates, geometry) {
+					if (!geometry) {
+						geometry = new ol.geom.Polygon(null);
+					}
+					var center = coordinates[0];
+					var last = coordinates[1];
+					var dx = center[0] - last[0];
+					var dy = center[1] - last[1];
+					var radius = Math.sqrt(dx * dx + dy * dy);
+					var rotation = Math.atan2(dy, dx);
+					var newCoordinates = [];
+					var numPoints = 12;
+					for (var i = 0; i < numPoints; ++i) {
+						var angle = rotation + i * 2 * Math.PI / numPoints;
+						var fraction = i % 2 === 0 ? 1 : 0.5;
+						var offsetX = radius * fraction * Math.cos(angle);
+						var offsetY = radius * fraction * Math.sin(angle);
+						newCoordinates.push([center[0] + offsetX, center[1] + offsetY]);
+					}
+					newCoordinates.push(newCoordinates[0].slice());
+					geometry.setCoordinates([newCoordinates]);
+					return geometry;
+				};
+			}
+			map.removeInteraction(draw);
+			draw = new ol.interaction.Draw({
+				source: drawSource,
+				type: /** @type {ol.geom.GeometryType} */ (value),
+				geometryFunction: geometryFunction
+			});
+			map.addInteraction(draw);
+
+//			drawLayer = new ol.layer.Vector({
+//				source:drawSource
+//			});
+//			map.addOverlay(drawLayer);
+		}
+	}
+
 	var ipcRenderer = require('electron').ipcRenderer;
+
+	ipcRenderer.on('drawTypeChange', function(sender, drawTypeSelectValue) {
+		drawTypeChange(drawTypeSelectValue);
+	});
 	ipcRenderer.on('tick', function(sender, t) {
 		onTick(t);
 	});
 	ipcRenderer.on('syncMapParam', function(sender, t) {
 		// 其他二维视图地图视角发生变化时与之保持同步
 		settingMapParam = true;
-		map.center(t.center).zoom(t.zoom);
+		map.getView().setCenter(t.center);
+		map.getView().setZoom(t.zoom);
+//		map.center(t.center).zoom(t.zoom);
 		settingMapParam = false;
 	});
 	ipcRenderer.on('syncPersonStateVisible', function(sender, t) {
@@ -522,6 +639,15 @@
 		}
 	}
 
+	// 地图单击响应事件
+	var mapSingleclick = function(evt) {
+		//hdms显示所点的坐标
+		var coordinate = evt.coordinate;
+		var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326'));
+		content.innerHTML = '<form action=""><p><select id="addSelectName"><option value="hospital">医院</option><option value="busStop">公交站</option></select></p><p><label for="name">名称:&nbsp;</label><input type="text" name="name" id="name"></p><p><label for="remarks">备注:&nbsp;</label><input type="text" name="remarks" id="remarks"></p><p><input type="button" id="btn" value="提交"></p></form>';
+		overlay.setPosition(coordinate);
+	};
+
 	function initMap() {
 		var po = org.polymaps;
 		var interact = po.interact();
@@ -552,6 +678,20 @@
 			undefinedHTML: '&nbsp;'
 		});
 
+		overlay = new ol.Overlay({
+			element: container,
+			autoPan: true,
+			autoPanAnimation: {
+				duration: 250
+			}
+		});
+
+		closer.onclick = function() {
+			overlay.setPosition(undefined);
+			closer.blur();
+			return false;
+		};
+
 		map = new ol.Map({
 			target: 'map',
 			controls:ol.control.defaults({
@@ -560,6 +700,10 @@
 				})
 			}).extend([
 				mousePositionControl
+//				,
+//				new ol.control.FullScreen(),
+//				new ol.control.OverviewMap(),
+//				new ol.control.ScaleLine()
 			]),
 			layers: [
 				baseLayer,
@@ -567,25 +711,33 @@
 			],
 			view: view
 		});
-
+		drawSource =new ol.source.Vector({wrapX:false});
+		drawLayer = new ol.layer.Vector({
+			source:drawSource
+		});
+		map.addLayer(drawLayer);
 		map.isDragging = function(){
 			return interact.drag.dragging();
 		}
-
+		map.addOverlay(overlay);
+		map.on('singleclick',mapSingleclick);
 //		map.on('move', function(){
-		map.on('moveend', function(){
+		map.on('moveend', function(evt){
 			if (!settingMapParam) // 防止循环调用陷入死循环
 			{
 				//				ipcRenderer.sendToHost('setMapParam', map.center(), map.zoom());
-				let temp = ol.proj.toLonLat(map.getView().getCenter());
-				let center = {lon:temp[0], lat:temp[1]};//map.center();
+//				let temp = ol.proj.toLonLat(map.getView().getCenter());
+//				let center = {lon:temp[0], lat:temp[1]};//map.center();
+				let center = map.getView().getCenter();
 				ipcRenderer.sendToHost('setMapParam', center, map.getView().getZoom());
 			}
 		});
-		map.on('resize', function(){
+//		map.on('resize', function(){
+//			resizeMainCanvas();
+//		});
+		map.on('change:size', function(){
 			resizeMainCanvas();
 		});
-
 		var lastMoveTime = new Date();
 		function mousemove(e){
 			if (interact.drag.dragging())
@@ -606,6 +758,8 @@
 
 			// 采用OpenLayersMousePosition控件计算得到地图坐标
 			var mousePosition = document.getElementById('mouse-position').innerText;
+			ipcRenderer.sendToHost('updateMousePosition', mousePosition);
+
 			mousePosition = mousePosition.split(", ");
 			let pos = {lon:Number.parseFloat(mousePosition[0]),lat:Number.parseFloat(mousePosition[1])};
 //			pos = {lon:Number(mousePosition[0]),lat:Number(mousePosition[1])};
